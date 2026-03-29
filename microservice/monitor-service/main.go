@@ -3,6 +3,9 @@ package main
 import (
 	"flag"
 	"log"
+
+	"WebSupervisor/model"
+	"WebSupervisor/MyTool"
 )
 
 func main() {
@@ -14,11 +17,11 @@ func main() {
 		log.Println("Debug mode enabled")
 	}
 
-	config, err := loadConfig(*configPath)
-	if err != nil {
+	var config model.MonitorConfig
+	if err := MyTool.LoadConfig(*configPath, &config); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	service := NewMonitorService(config, *debug)
+	service := NewMonitorService(&config, *debug)
 	service.Start()
 }

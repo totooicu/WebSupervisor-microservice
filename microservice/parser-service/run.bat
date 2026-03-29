@@ -1,0 +1,1 @@
+.\run.exe -debug -config ./config.json

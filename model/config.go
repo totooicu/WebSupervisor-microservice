@@ -50,4 +50,5 @@ type MonitorConfig struct {
 	NotifierServiceInputStream string `json:"notifier-service_input_stream"`
 	JobsPath                   string `json:"jobs_path"`
 	IntervalSecond             int    `json:"interval_second"`
+	HealthCheckPort            string `json:"health_check_port"`
 }
