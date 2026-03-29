@@ -1,8 +1,8 @@
- cd "e:\StudyData\GO\WebSupervisor-microservice\new" 
+ cd "E:\StudyData\GO\WebSupervisor\WebSupervisor-microservice" 
 
-  go build -o ./bin/cache-service.exe ./cache-service
-  go build -o ./bin/crawler-service.exe ./crawler-service
-  go build -o ./bin/monitor-service.exe ./monitor-service
-  go build -o ./bin/notifier-service.exe ./notifier-service
-  go build -o ./bin/parser-service.exe ./parser-service
+  go build -o ./microservice/cache-service/run.exe ./microservice/cache-service
+  go build -o ./microservice/crawler-service/run.exe ./microservice/crawler-service
+  go build -o ./microservice/monitor-service/run.exe ./microservice/monitor-service
+  go build -o ./microservice/notifier-service/run.exe ./microservice/notifier-service
+  go build -o ./microservice/parser-service/run.exe ./microservice/parser-service
 

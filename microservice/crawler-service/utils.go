@@ -4,11 +4,19 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"WebSupervisor/new/model"
-	"WebSupervisor/new/utils"
+	"WebSupervisor/model"
+	"WebSupervisor/MyTool"
 )
 
-func loadConfig(configPath string) (*model.MonitorConfig, error) {
+func mapToStruct(m map[string]interface{}, s interface{}) error {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, s)
+}
+
+func loadConfig(configPath string) (*model.CrawlerConfig, error) {
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return nil, err
@@ -21,7 +29,7 @@ func loadConfig(configPath string) (*model.MonitorConfig, error) {
 	}
 
 	// 替换环境变量
-	utils.ExpandEnvVarsInMap(configMap)
+	MyTool.ExpandEnvVarsInMap(configMap)
 
 	// 将map转换回JSON
 	processedData, err := json.Marshal(configMap)
@@ -30,7 +38,7 @@ func loadConfig(configPath string) (*model.MonitorConfig, error) {
 	}
 
 	// 解析为配置结构体
-	var config model.MonitorConfig
+	var config model.CrawlerConfig
 	if err := json.Unmarshal(processedData, &config); err != nil {
 		return nil, err
 	}

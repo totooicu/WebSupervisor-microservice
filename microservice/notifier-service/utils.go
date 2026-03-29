@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 
-	"WebSupervisor/new/model"
-	"WebSupervisor/new/utils"
+	"WebSupervisor/model"
+	"WebSupervisor/MyTool"
 )
 
 func mapToStruct(m map[string]interface{}, s interface{}) error {
@@ -32,7 +32,7 @@ func loadConfig(configPath string) (*model.NotifierConfig, error) {
 	log.Printf("Debug - Before env expansion: %+v", configMap)
 
 	// 替换环境变量
-	utils.ExpandEnvVarsInMap(configMap)
+	MyTool.ExpandEnvVarsInMap(configMap)
 
 	log.Printf("Debug - After env expansion: %+v", configMap)
 

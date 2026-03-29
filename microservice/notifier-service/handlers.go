@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"WebSupervisor/new/model"
-	"WebSupervisor/new/utils"
+	"WebSupervisor/model"
+	"WebSupervisor/MyTool"
 	streams_model "streams-communication/model"
 )
 
@@ -52,7 +52,7 @@ func (s *NotifierService) handleSendEmail(task streams_model.Message) {
 
 	log.Printf("Sending email to: %v", tos)
 
-	if err := utils.SendEmail(userName, password, tos, params.Subject, params.Content); err != nil {
+	if err := MyTool.SendEmail(userName, password, tos, params.Subject, params.Content); err != nil {
 		log.Printf("Error sending email: %v", err)
 		return
 	}

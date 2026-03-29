@@ -1,7 +1,7 @@
 package MyTool
 
 import (
-	"WebSupervisor/new/MyTool/myjson"
+	"WebSupervisor/MyTool/myjson"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -38,7 +38,7 @@ func (this *HttpHeader) Get(param string) *HttpHeader {
 	this.response = resp
 	return this
 }
-func (this *HttpHeader) Post(data map[string]string, stringPlayLoad string) *HttpHeader {
+func (this *HttpHeader) Post(data map[string]any, stringPlayLoad string) *HttpHeader {
 	client := &http.Client{}
 
 	jsonData := stringPlayLoad

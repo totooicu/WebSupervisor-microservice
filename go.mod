@@ -1,4 +1,4 @@
-module WebSupervisor/new
+module WebSupervisor
 
 go 1.23.0
 
@@ -15,4 +15,4 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 )
 
-replace streams-communication => ../streams-library
+replace streams-communication => ./streams-library

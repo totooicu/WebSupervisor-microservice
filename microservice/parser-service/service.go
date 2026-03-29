@@ -3,28 +3,28 @@ package main
 import (
 	"log"
 
-	"WebSupervisor/new/model"
-	"WebSupervisor/new/redis"
+	"WebSupervisor/model"
+	"WebSupervisor/MyTool/redis"
 	streams_communication "streams-communication"
 	streams_model "streams-communication/model"
 )
 
-type NotifierService struct {
+type ParserService struct {
 	redisClient *redis.Client
-	config      *model.NotifierConfig
+	config      *model.ParserConfig
 	debug       bool
 }
 
-func NewNotifierService(config *model.NotifierConfig, debug bool) *NotifierService {
-	return &NotifierService{
+func NewParserService(config *model.ParserConfig, debug bool) *ParserService {
+	return &ParserService{
 		redisClient: redis.NewClient(config.Redis.Host, config.Redis.Port, config.Redis.Password, config.Redis.DB),
 		config:      config,
 		debug:       debug,
 	}
 }
 
-func (s *NotifierService) Start() {
-	log.Println("Starting notifier service...")
+func (s *ParserService) Start() {
+	log.Println("Starting parser service...")
 	if s.debug {
 		log.Printf("Debug mode enabled, config: %+v", s.config)
 	}
@@ -37,8 +37,8 @@ func (s *NotifierService) Start() {
 		s.debug,
 		s.config.InputStream,
 		s.config.ConsumerGroup,
-		"notifier-consumer",
-		"send_email",
+		"parser-consumer",
+		"",
 	)
 	
 	// 启动流消费者
@@ -46,12 +46,14 @@ func (s *NotifierService) Start() {
 }
 
 // ProcessTask 实现StreamProcessor接口
-func (s *NotifierService) ProcessTask(task streams_model.Message) {
+func (s *ParserService) ProcessTask(task streams_model.Message) {
 	log.Printf("Processing task: %s", task.TaskID)
 	
 	switch task.ServiceName {
-	case "send_email":
-		s.handleSendEmail(task)
+	case "parse_html":
+		s.handleParseHTML(task)
+	case "parse_json":
+		s.handleParseJSON(task)
 	default:
 		if s.debug {
 			log.Printf("Debug - Unsupported service: %s", task.ServiceName)

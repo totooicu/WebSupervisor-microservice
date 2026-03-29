@@ -5,7 +5,7 @@ import (
 	"log"
 	streams_model "streams-communication/model"
 
-	"WebSupervisor/new/model"
+	"WebSupervisor/model"
 )
 
 func (s *CacheService) handleCompareAndSave(task streams_model.Message) {

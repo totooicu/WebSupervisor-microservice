@@ -2,12 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"WebSupervisor/new/MyTool"
+	"WebSupervisor/MyTool"
 	"fmt"
 	"log"
 	"strings"
-	"WebSupervisor/new/model"
-	"WebSupervisor/new/utils"
+	"WebSupervisor/model"
+
 	streams_model "streams-communication/model"
 )
 
@@ -80,7 +80,7 @@ func (s *ParserService) handleParseJSON(task streams_model.Message) {
 		log.Printf("Debug - JSON parse params: JSONKeys=%v, content length=%d", params.JSONKeys, len(params.Content))
 	}
 
-	results := utils.ParseJSON(params.Content, jsonKeys)
+	results := MyTool.ParseJSON(params.Content, jsonKeys)
 
 	if s.debug {
 		log.Printf("Debug - JSON parse completed, found %d results", len(results))

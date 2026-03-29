@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"WebSupervisor/new/model"
-	"WebSupervisor/new/redis"
+	"WebSupervisor/model"
+	"WebSupervisor/MyTool/redis"
 )
 
 type MonitorService struct {

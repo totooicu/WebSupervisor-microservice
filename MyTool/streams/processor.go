@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"WebSupervisor/new/model"
-	"WebSupervisor/new/redis"
+	"WebSupervisor/model"
+	"WebSupervisor/MyTool/redis"
 )
 
 // StreamProcessor 定义流处理接口

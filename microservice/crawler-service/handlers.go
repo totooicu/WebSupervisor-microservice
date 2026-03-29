@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"WebSupervisor/new/model"
-	"WebSupervisor/new/utils"
+	"WebSupervisor/model"
+	"WebSupervisor/MyTool"
 	streams_model "streams-communication/model"
 )
 
@@ -23,19 +23,19 @@ func (s *CrawlerService) handleHttpRequest(task streams_model.Message) {
 	var response string
 	var err error
 
-	httpClient := utils.NewHttpClient(params.URL, params.Headers)
+	httpClient := MyTool.NewHttpHeader(params.URL, params.Headers)
 
 	switch params.Method {
 	case "GET":
 		if s.debug {
 			log.Printf("Debug - Sending GET request to: %s", params.URL)
 		}
-		response, err = httpClient.Get()
+		response = httpClient.Get("").GetBodyString()
 	case "POST":
 		if s.debug {
 			log.Printf("Debug - Sending POST request to: %s", params.URL)
 		}
-		response, err = httpClient.Post(params.Body, params.StrPayload)
+		response = httpClient.Post(params.Body, params.StrPayload).GetBodyString()
 	default:
 		log.Printf("Unsupported method: %s", params.Method)
 		return

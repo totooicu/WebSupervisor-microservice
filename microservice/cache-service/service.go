@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"WebSupervisor/new/model"
-	"WebSupervisor/new/redis"
+	"WebSupervisor/model"
+	"WebSupervisor/MyTool/redis"
 	streams_communication "streams-communication"
 	streams_model "streams-communication/model"
 )
