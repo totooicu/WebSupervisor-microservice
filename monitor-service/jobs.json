@@ -1,0 +1,30 @@
+{
+  "projectName": "test",
+  "header": {},
+  "intervalSecond": 60,
+  "urls": [
+    {
+      "url": "https://gradadmission.zstu.edu.cn/sszs.htm",
+      "output": "./resource/output/zstu.html",
+      "test": false,
+      "header": {
+        "User-Agent": "Apifox/1.0.0 (https://apifox.com)",
+        "Accept": "*/*",
+        "Host": "jwc.zstu.edu.cn",
+        "Connection": "keep-alive"
+      },
+      "method": "GET",
+      "body": {},
+
+      "type": "html",
+      "jsonKeys": [],
+      "htmlKeys": [
+        {
+          "left": "<ul>",
+          "right": "</ul>",
+          "key": [".*"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+"redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": "",
+    "db": 0
+},
+"consumer_group": "notifier-group",
+"input_stream": "notifier-tasks",
+"mail": {
+    "userName": "${QQ_MAIL_ACCOUNT_1134}",
+    "password": "${QQ_MAIL_PASSWORD_1134}",
+    "tos": ["2667657661@qq.com"]
+}
+}

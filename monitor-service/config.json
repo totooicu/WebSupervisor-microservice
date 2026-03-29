@@ -1,0 +1,17 @@
+{
+"redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": "",
+    "db": 0
+},
+"consumer_group": "monitor-group",
+"input_stream": "monitor-tasks",
+"output_stream": "crawler-tasks",
+"crawler-service_input_stream": "crawler-tasks",
+"parser-service_input_stream": "parser-tasks",
+"cache-service_input_stream": "cache-tasks",
+"notifier-service_input_stream": "notifier-tasks",
+"jobs_path": "./jobs.json",
+"interval_second": 20
+}
