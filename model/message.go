@@ -18,8 +18,8 @@ type CrawlerParameter struct {
 
 type ParserParameter struct {
 	Content  string      `json:"content"`
-	HTMLKeys []HTMLKey   `json:"HTMLKeys"`
-	JSONKeys []JSONKey   `json:"JSONKeys"`
+	HTMLKeys []HTMLKey   `json:"htmlKeys"`
+	JSONKeys []JSONKey   `json:"jsonKeys"`
 }
 
 type HTMLKey struct {

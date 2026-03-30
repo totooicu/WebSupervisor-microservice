@@ -14,6 +14,7 @@ type HttpHeader struct {
 	Header     map[string]string
 	response   *http.Response
 	bodyString string
+	statusCode int
 }
 
 func NewHttpHeader(url string, header map[string]string) *HttpHeader {
@@ -22,6 +23,7 @@ func NewHttpHeader(url string, header map[string]string) *HttpHeader {
 func (this *HttpHeader) Get(param string) *HttpHeader {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", this.Url+"?"+param, nil)
+	
 	if err != nil {
 		// 处理错误
 		fmt.Print("HttpClient Get req 失败", err)
@@ -69,6 +71,7 @@ func (this *HttpHeader) Post(data map[string]any, stringPlayLoad string) *HttpHe
 	return this
 }
 func (this *HttpHeader) Read() *HttpHeader {
+	this.statusCode = this.response.StatusCode
 	if this.response.StatusCode == http.StatusOK {
 		bodyBytes, err := ioutil.ReadAll(this.response.Body)
 		if err != nil {
@@ -85,6 +88,9 @@ func (this *HttpHeader) Read() *HttpHeader {
 func (this *HttpHeader) GetBodyString() string {
 	//fmt.Print("HttpClient GetBodyString", this.bodyString)
 	return this.bodyString
+}
+func (this *HttpHeader) GetStatusCode() int { 
+	return this.statusCode
 }
 func (this *HttpHeader) Close() {
 	err := this.response.Body.Close()

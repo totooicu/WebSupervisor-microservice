@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"encoding/json"
 
@@ -120,15 +119,14 @@ func (sc *ServiceCommunicator) SendToCacheService(parsedData interface{}, urlCon
 }
 
 // SendNotification 发送通知到通知服务
-func (sc *ServiceCommunicator) SendNotification(notificationType, message string) error {
+func (sc *ServiceCommunicator) SendNotification(subject string, content string) error {
 	paramData := map[string]interface{}{
-		"type":    notificationType,
-		"message": message,
-		"time":    time.Now().Format(time.RFC3339),
+		"subject": subject,
+		"content": content,
 	}
 
 	streamMsg := &models.StreamMessage{
-		ServiceName:    "send_notification",
+		ServiceName:    "send_email",
 		CallbackStream: "",
 		Playload:       paramData,
 	}

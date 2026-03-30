@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"strconv"
 
@@ -14,15 +13,17 @@ import (
 func (s *NotifierService) handleSendEmail(msg *models.StreamMessage) {
 	// 解析参数
 	var params model.NotifierParameter
-	playloadData, err := json.Marshal(msg.Playload)
-	if err != nil {
-		log.Printf("Error marshalling playload: %v", err)
-		return
+	email_content := msg.Playload
+	params.Subject = email_content["subject"].(string)
+	params.Content = email_content["content"].(string)
+	if email_content["userName"]!=nil{
+		params.UserName = email_content["userName"].(string)
 	}
-	
-	if err := json.Unmarshal(playloadData, &params); err != nil {
-		log.Printf("Error unmarshalling playload: %v", err)
-		return
+	if email_content["password"]!=nil{
+		params.Password = email_content["password"].(string)
+	}
+	if email_content["tos"]!=nil{
+		params.Tos = email_content["tos"].([]string)
 	}
 
 	userName := s.config.Mail.UserName

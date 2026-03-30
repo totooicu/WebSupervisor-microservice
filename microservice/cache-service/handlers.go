@@ -275,6 +275,7 @@ func (s *CacheService) handleGetAndSet(msg *models.StreamMessage) {
 	paramData := map[string]interface{}{
 		"key":      key,
 		"old_data": oldData,
+		"changed":   s.CompareData(oldData, params.Data),
 		"error":    nil,
 	}
 

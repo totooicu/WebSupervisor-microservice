@@ -63,6 +63,7 @@ func (s *CrawlerService) handleHttpRequest(msg *models.StreamMessage) {
 	// 构造响应消息
 	paramData := map[string]interface{}{
 		"content": response,
+		"status":httpClient.GetStatusCode(),
 	}
 
 	st := streamtool.GetStreamTool()

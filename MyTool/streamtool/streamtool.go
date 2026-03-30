@@ -93,11 +93,14 @@ func (st *StreamTool) StreamGet(stream, group, consumer string) (*models.StreamM
 
 	msg := messages[0]
 	var streamMsg models.StreamMessage
+	streamMsg.Playload = make(map[string]interface{})
 
 	if messageValue, ok := msg.Values["message"]; ok {
 		if messageStr, ok := messageValue.(string); ok {
 			if err := json.Unmarshal([]byte(messageStr), &streamMsg); err != nil {
-				return nil, err
+				if st.debug {
+					log.Printf("Debug - Failed to unmarshal message: %v", err)
+				}
 			}
 		}
 	} else {
@@ -113,11 +116,27 @@ func (st *StreamTool) StreamGet(stream, group, consumer string) (*models.StreamM
 		if callbackStream, ok := msg.Values["callback_stream"].(string); ok {
 			streamMsg.CallbackStream = callbackStream
 		}
-		if playload, ok := msg.Values["playload"].(string); ok {
-			if err := json.Unmarshal([]byte(playload), &streamMsg.Playload); err != nil {
-				streamMsg.Playload = map[string]interface{}{"raw": playload}
+		if playload, ok := msg.Values["playload"]; ok {
+			switch v := playload.(type) {
+			case string:
+				// 尝试解析JSON字符串
+				var playloadMap map[string]interface{}
+				if err := json.Unmarshal([]byte(v), &playloadMap); err != nil {
+					// 如果解析失败，直接作为字符串存储
+					streamMsg.Playload["raw"] = v
+				} else {
+					streamMsg.Playload = playloadMap
+				}
+			case map[string]interface{}:
+				streamMsg.Playload = v
+			default:
+				streamMsg.Playload["raw"] = v
 			}
 		}
+	}
+
+	if st.debug {
+		log.Printf("Debug - Parsed stream message: %+v", streamMsg)
 	}
 
 	return &streamMsg, nil
@@ -216,8 +235,6 @@ func (st *StreamTool) StartGateway(inputStream, group, consumer string) {
 				continue
 			}
 
-
-
 			// 分发消息到对应服务
 			if channel, exists := st.serviceMap[msg.ServiceName]; exists {
 				channel.Put(msg)
@@ -238,7 +255,7 @@ func (st *StreamTool) StartService(serviceName string, handler func(msg *models.
 		for {
 			msg := st.serviceMap[serviceName].Get().(*models.StreamMessage)
 			log.Printf(">>>StartService Service %s is running , msg: %+v", serviceName, msg)
-			
+
 			handler(msg)
 		}
 	}()

@@ -3,7 +3,9 @@ package main
 import (
 	"WebSupervisor/model"
 	"encoding/json"
+	"strings"
 	"fmt"
+	"net/http"
 	"log"
 	"strconv"
 	"sync"
@@ -86,18 +88,16 @@ func (ts *TaskScheduler) startJobScheduler(job JobConfig) {
 // executeJob 执行单个job
 func (ts *TaskScheduler) executeJob(job JobConfig) {
 	log.Printf("Executing job: %s", job.ProjectName)
-
 	var wg sync.WaitGroup
 	for _, urlConfig := range job.URLs {
 		wg.Add(1)
 		go func(urlConfig URLConfig) {
 			defer wg.Done()
 			if err := ts.executeURLTask(urlConfig); err != nil {
-				log.Printf("Error executing URL task %s: %v", urlConfig.URL, err)
-
-				// 发送错误通知
-				errorMsg := "Failed to execute URL task: " + urlConfig.URL
-				if notifyErr := ts.communicator.SendNotification("error", errorMsg); notifyErr != nil {
+				error_title := fmt.Sprintf("Error executing URL task %v: %v", urlConfig.URL, err)
+				error_content := fmt.Sprintf("Error executing URL task %v: %v", urlConfig, err)
+				log.Printf("%s: %s", error_title, error_content)
+				if notifyErr := ts.communicator.SendNotification(error_title, error_content); notifyErr != nil {
 					log.Printf("Failed to send error notification: %v", notifyErr)
 				}
 			}
@@ -107,7 +107,32 @@ func (ts *TaskScheduler) executeJob(job JobConfig) {
 	wg.Wait()
 	log.Printf("Job %s execution completed", job.ProjectName)
 }
+func gen_email_content(urlConfig URLConfig, parserResult []any, cacheResult []any) string {
+	/*格式为：
+	>>>配置信息：
+		>>> >>>i :内容
 
+	>>>原内容：
+		>>> >>>i :内容
+
+
+	>>>全部内容：
+		>>> >>>i :内容
+	*/
+	content:=""
+	content+=fmt.Sprintf(">>>配置信息：</br></br>%V</br></br>", urlConfig)
+
+	content+=fmt.Sprintf(">>>匹配内容：\n")
+	for i, change := range parserResult { //parserResult
+		content+=fmt.Sprintf(">>> >>>%d :%s<br></br>",i,change.(string))
+	}
+	content+=fmt.Sprintf(">>>原匹配内容：\n")
+	for i, c := range cacheResult { //cacheResult
+		content+=fmt.Sprintf(">>> >>>%d :%s<br></br>",i,c.(string))
+	}
+
+	return content
+}
 // executeURLTask 执行单个URL任务，整合爬取、解析、比对缓存、通知功能
 func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 	if ts.debug {
@@ -115,34 +140,25 @@ func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 	}
 	log.Printf(">>>Executing URL task: %V", urlConfig.URL)
 
-	// 1. 发送爬虫请求，获取响应对象（非阻塞）
-	crawlerResponseObj, err := ts.communicator.SendMessageWithResponse(
-		ts.communicator.crawlerStream,
-		ts.createCrawlerTask(urlConfig),
-	)
-	if err != nil {
-		return fmt.Errorf("crawler failed: %w", err)
-	}
+		// 1. 发送爬虫请求，获取响应对象（非阻塞）
+		crawlerResponseObj, err := ts.communicator.SendMessageWithResponse(
+			ts.communicator.crawlerStream,
+			ts.createCrawlerTask(urlConfig),
+		)
+		if err != nil {
+			return fmt.Errorf("crawler failed: %w", err)
+		}
+		if ts.debug {
+			log.Printf("Debug - Crawler request sent, waiting for response")
+		}
 
-	if ts.debug {
-		log.Printf("Debug - Crawler request sent, waiting for response")
-	}
+		// 获取爬虫响应（阻塞）
+		crawlerResponseData := crawlerResponseObj.Get()
 
-	// 在这里可以执行一些与爬虫响应无关的计算任务
-	// ...
-
-	// 获取爬虫响应（阻塞）
-	crawlerResponseData := crawlerResponseObj.Get()
-
-	// 解析爬虫响应数据
-	// var crawlerResult struct {
-	// 	Content string `json:"content"`
-	// }
-	// if err := json.Unmarshal([]byte(crawlerResponseData.(string)), &crawlerResult); err != nil {
-	// 	return fmt.Errorf("failed to parse crawler response: %w", err)
-	// }
-
-	crawlerResult := crawlerResponseData.(map[string]interface{})["content"].(string)
+		if crawlerResponseData.(map[string]interface{})["status"].(float64) != http.StatusOK {
+			return fmt.Errorf("crawler failed: status code is %d", crawlerResponseData.(map[string]interface{})["status"].(float64))
+		}
+		crawlerResult := crawlerResponseData.(map[string]interface{})["content"].(string)
 	// 2. 发送解析请求，获取响应对象（非阻塞）
 	parserResponseObj, err := ts.communicator.SendMessageWithResponse(
 		ts.communicator.parserStream,
@@ -161,19 +177,14 @@ func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 
 	// 获取解析响应（阻塞）
 	parserResponseData := parserResponseObj.Get()
-
-	// 解析解析器响应数据
-	var parserResult struct {
-		ParsedData interface{} `json:"parsed_data"`
-	}
-	if err := json.Unmarshal([]byte(parserResponseData.(string)), &parserResult); err != nil {
-		return fmt.Errorf("failed to parse parser response: %w", err)
-	}
+	log.Printf(">>> parserResponseData: %v", parserResponseData)
+	parserResult:= parserResponseData.(map[string]interface{})["parsed_data"]
+	log.Printf(">>> parserResult: %v", parserResult)
 
 	// 3. 发送缓存比对请求，获取响应对象（非阻塞）
 	cacheResponseObj, err := ts.communicator.SendMessageWithResponse(
 		ts.communicator.cacheStream,
-		ts.createCacheTask(parserResult.ParsedData, urlConfig),
+		ts.createCacheTask(parserResult, urlConfig,"compare_and_save"),
 	)
 	if err != nil {
 		return fmt.Errorf("cache compare failed: %w", err)
@@ -183,26 +194,30 @@ func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 		log.Printf("Debug - Cache compare request sent, waiting for response")
 	}
 
-	// 在这里可以执行一些与缓存比对响应无关的计算任务
-	// ...
-
 	// 获取缓存比对响应（阻塞）
 	cacheResponseData := cacheResponseObj.Get()
 
 	// 解析缓存响应数据
-	var cacheResult struct {
-		Changed bool `json:"changed"`
-	}
-	if err := json.Unmarshal([]byte(cacheResponseData.(string)), &cacheResult); err != nil {
-		return fmt.Errorf("failed to parse cache response: %w", err)
-	}
+	cache_changed_Result:= cacheResponseData.(map[string]interface{})["changed"].(bool)
 
 	// 4. 发送通知（如果数据有变化）
-	if cacheResult.Changed {
-		notificationMsg := fmt.Sprintf("Data changed for URL: %s", urlConfig.URL)
-		if err := ts.communicator.SendNotification("info", notificationMsg); err != nil {
+	if cache_changed_Result {
+		changed_result_obj,err := ts.communicator.SendMessageWithResponse(
+		ts.communicator.cacheStream,
+		ts.createCacheTask(parserResult, urlConfig,"get_and_set"),)
+		if err != nil {
+			return fmt.Errorf("cache get failed: %w", err)
+		}
+		subject:=fmt.Sprintf("Data changed for URL: %s", urlConfig.URL)
+		content:=fmt.Sprintf("<h1>%s</h1>\n\n", urlConfig.URL)//包含现在的内容、原有的内容、全部内容
+
+		changed_result := changed_result_obj.Get()
+		content+=gen_email_content(urlConfig, parserResult.([]any), changed_result.(map[string]interface{})["data"].([]any))
+		
+		if err := ts.communicator.SendNotification(subject, content); err != nil {
 			log.Printf("Failed to send notification: %v", err)
 		} else {
+			notificationMsg := fmt.Sprintf("Data changed for URL: %s", urlConfig.URL)
 			log.Printf("Notification sent: %s", notificationMsg)
 		}
 	} else if ts.debug {
@@ -337,8 +352,8 @@ func (ts *TaskScheduler) createParserTask(rawData string, urlConfig URLConfig) m
 	paramData := map[string]interface{}{
 		"content":   rawData,
 		"type":      urlConfig.Type,
-		"json_keys": urlConfig.JSONKeys,
-		"html_keys": urlConfig.HTMLKeys,
+		"jsonkeys": urlConfig.JSONKeys,
+		"htmlkeys": urlConfig.HTMLKeys,
 		"output":    urlConfig.Output,
 	}
 
@@ -348,13 +363,13 @@ func (ts *TaskScheduler) createParserTask(rawData string, urlConfig URLConfig) m
 		TaskID:         taskID,
 		ConsumerGroup:  "parser-group",
 		CallbackStream: "monitor-response-stream",
-		ServiceName:    "parse_data",
+		ServiceName:    "parse_"+strings.ToLower(urlConfig.Type),//parse_html parse_json
 		Playload:       string(paramBytes),
 	}
 }
 
 // createCacheTask 创建缓存比对任务
-func (ts *TaskScheduler) createCacheTask(parsedData interface{}, urlConfig URLConfig) model.Message {
+func (ts *TaskScheduler) createCacheTask(parsedData interface{}, urlConfig URLConfig,ServiceName string) model.Message {
 	taskID := strconv.Itoa(int(time.Now().UnixNano()))
 
 	paramData := map[string]interface{}{
@@ -369,7 +384,7 @@ func (ts *TaskScheduler) createCacheTask(parsedData interface{}, urlConfig URLCo
 		TaskID:         taskID,
 		ConsumerGroup:  "cache-group",
 		CallbackStream: "monitor-response-stream",
-		ServiceName:    "compare_and_save",
+		ServiceName:    ServiceName,
 		Playload:       string(paramBytes),
 	}
 }

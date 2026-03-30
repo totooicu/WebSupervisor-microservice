@@ -28,9 +28,10 @@ func (s *ParserService) handleParseHTML(msg *models.StreamMessage) {
 	}
 
 	if s.debug {
-		log.Printf("Debug - HTML parse params: HTMLKeys=%v, content length=%d", params.HTMLKeys, len(params.Content))
+		log.Printf(">>>Debug - HTML parse params: HTMLKeys=%v, content length=%d", params.HTMLKeys, len(params.Content))
 	}
-
+	// log.Printf(">>>Debug - HTML parse params: content=%s", params.Content[len(params.Content)-100:len(params.Content)])
+		
 	results := MyTool.GetMid(params.Content, params.HTMLKeys[0].Left, params.HTMLKeys[0].Right, 0)
 
 	if s.debug {
