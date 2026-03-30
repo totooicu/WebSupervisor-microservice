@@ -1,7 +1,7 @@
 package response
 
 import (
-	"WebSupervisor/MyTool/mysync"
+	"WebSupervisor/MyTool/sync"
 	"sync"
 )
 

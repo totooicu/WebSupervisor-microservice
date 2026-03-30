@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"WebSupervisor/MyTool/mysync"
+	"WebSupervisor/MyTool/sync"
 	"WebSupervisor/MyTool/redis"
 	"WebSupervisor/MyTool/streamtool/models"
 	"WebSupervisor/MyTool/streamtool/response"

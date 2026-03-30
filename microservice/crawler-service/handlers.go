@@ -5,7 +5,7 @@ import (
 	"log"
 	"strconv"
 
-	"WebSupervisor/MyTool"
+	http "WebSupervisor/MyTool/http"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
 	"WebSupervisor/model"
@@ -38,7 +38,7 @@ func (s *CrawlerService) handleHttpRequest(msg *models.StreamMessage) {
 
 	var response string
 
-	httpClient := MyTool.NewHttpHeader(params.URL, params.Headers)
+	httpClient := http.NewHttpHeader(params.URL, params.Headers)
 
 	switch params.Method {
 	case "GET":

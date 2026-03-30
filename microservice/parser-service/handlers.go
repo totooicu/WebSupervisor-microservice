@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 	"strconv"
+	"strings"
 
-	"WebSupervisor/MyTool"
+	parser "WebSupervisor/MyTool/parser"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
 	"WebSupervisor/model"
@@ -32,7 +32,7 @@ func (s *ParserService) handleParseHTML(msg *models.StreamMessage) {
 	}
 	// log.Printf(">>>Debug - HTML parse params: content=%s", params.Content[len(params.Content)-100:len(params.Content)])
 		
-	results := MyTool.GetMid(params.Content, params.HTMLKeys[0].Left, params.HTMLKeys[0].Right, 0)
+	results := parser.ParseHTML(params.Content, []string{params.HTMLKeys[0].Left + "," + params.HTMLKeys[0].Right})
 
 	if s.debug {
 		log.Printf("Debug - HTML parse completed, found %d results", len(results))
@@ -88,7 +88,7 @@ func (s *ParserService) handleParseJSON(msg *models.StreamMessage) {
 		log.Printf("Debug - JSON parse params: JSONKeys=%v, content length=%d", params.JSONKeys, len(params.Content))
 	}
 
-	results := MyTool.ParseJSON(params.Content, jsonKeys)
+	results := parser.ParseJSON(params.Content, jsonKeys)
 
 	if s.debug {
 		log.Printf("Debug - JSON parse completed, found %d results", len(results))

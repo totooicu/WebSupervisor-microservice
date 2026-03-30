@@ -1,7 +1,7 @@
 package MyTool
 
 import (
-	"WebSupervisor/MyTool/myjson"
+	myjson "WebSupervisor/MyTool/json"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"

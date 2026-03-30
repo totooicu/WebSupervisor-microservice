@@ -4,7 +4,7 @@ import (
 	"log"
 	"strconv"
 
-	"WebSupervisor/MyTool"
+	"WebSupervisor/MyTool/email"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
 	"WebSupervisor/model"

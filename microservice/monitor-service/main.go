@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 
+	configtool "WebSupervisor/MyTool/config"
 	"WebSupervisor/model"
-	"WebSupervisor/MyTool"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	}
 
 	var config model.MonitorConfig
-	if err := MyTool.LoadConfig(*configPath, &config); err != nil {
+	if err := configtool.LoadConfig(*configPath, &config); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 

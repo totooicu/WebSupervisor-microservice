@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"WebSupervisor/MyTool/mysync"
+	mysync "WebSupervisor/MyTool/sync"
 )
 
 // ResponseManager 响应管理器

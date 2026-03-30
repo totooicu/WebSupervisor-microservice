@@ -3,8 +3,9 @@ package MyTool
 import (
 	"encoding/json"
 	"fmt"
-
 	"strings"
+
+	stringtool "WebSupervisor/MyTool/string"
 )
 
 func ParseHTML(content string, keys []string) []string {
@@ -15,7 +16,7 @@ func ParseHTML(content string, keys []string) []string {
 		if len(parts) >= 2 {
 			left := parts[0]
 			right := parts[1]
-			values := GetMid(content, left, right, 0)
+			values := stringtool.GetMid(content, left, right, 0)
 			results = append(results, values...)
 		}
 	}

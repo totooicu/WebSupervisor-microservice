@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"WebSupervisor/MyTool"
+	configtool "WebSupervisor/MyTool/config"
 )
 
 // ConfigParser 配置解析器
@@ -26,7 +26,7 @@ func (p *ConfigParser) ParseJobsConfig(configPath string) (*JobConfig, error) {
 	}
 
 	var jobConfig JobConfig
-	if err := MyTool.LoadConfig(configPath, &jobConfig); err != nil {
+	if err := configtool.LoadConfig(configPath, &jobConfig); err != nil {
 		return nil, fmt.Errorf("failed to load jobs config: %w", err)
 	}
 
