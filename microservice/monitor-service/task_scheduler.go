@@ -210,9 +210,11 @@ func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 		}
 		subject:=fmt.Sprintf("Data changed for URL: %s", urlConfig.URL)
 		content:=fmt.Sprintf("<h1>%s</h1>\n\n", urlConfig.URL)//包含现在的内容、原有的内容、全部内容
-
-		changed_result := changed_result_obj.Get()
-		content+=gen_email_content(urlConfig, parserResult.([]any), changed_result.(map[string]interface{})["data"].([]any))
+		log.Printf(">>> parserResult: %v ", parserResult)
+		changed_result := changed_result_obj.Get().(map[string]interface{})["old_data"].([]any)
+		log.Printf(">>> changed_result: %v ", changed_result)
+		
+		content+=gen_email_content(urlConfig, parserResult.([]any), changed_result)
 		
 		if err := ts.communicator.SendNotification(subject, content); err != nil {
 			log.Printf("Failed to send notification: %v", err)

@@ -6,7 +6,7 @@
     "db": 0
 },
 "consumer_group": "notifier-group",
-"input_stream": "notifier-tasks__",
+"input_stream": "tasks:notifier",
 "mail": {
     "userName": "${QQ_MAIL_ACCOUNT_1134}",
     "password": "${QQ_MAIL_PASSWORD_1134}",

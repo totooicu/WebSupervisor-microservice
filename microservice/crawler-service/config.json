@@ -6,5 +6,5 @@
     "db": 0
 },
 "consumer_group": "crawler-group",
-"input_stream": "crawler-tasks"
+"input_stream": "tasks:crawler"
 }

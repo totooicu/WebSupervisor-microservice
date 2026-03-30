@@ -6,7 +6,7 @@
     "db": 0
 },
 "consumer_group": "cache-group",
-"input_stream": "cache-tasks",
+"input_stream": "tasks:cache",
 "persistence": {
     "app_paths": {
     "app_name": "path"

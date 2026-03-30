@@ -6,5 +6,5 @@
     "db": 0
 },
 "consumer_group": "parser-group",
-"input_stream": "parser-tasks"
+"input_stream": "tasks:parser"
 }

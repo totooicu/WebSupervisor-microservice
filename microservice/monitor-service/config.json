@@ -6,12 +6,11 @@
     "db": 0
 },
 "consumer_group": "monitor-group",
-"input_stream": "monitor-tasks",
-"output_stream": "crawler-tasks",
-"crawler-service_input_stream": "crawler-tasks",
-"parser-service_input_stream": "parser-tasks",
-"cache-service_input_stream": "cache-tasks",
-"notifier-service_input_stream": "notifier-tasks",
+"input_stream": "tasks:monitor",
+"crawler-service_input_stream": "tasks:crawler",
+"parser-service_input_stream": "tasks:parser",
+"cache-service_input_stream": "tasks:cache",
+"notifier-service_input_stream": "tasks:notifier",
 "jobs_path": "./jobs.json",
 "interval_second": 20
 }
