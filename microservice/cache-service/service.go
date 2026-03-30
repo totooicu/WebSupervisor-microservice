@@ -6,8 +6,8 @@ import (
 
 	"WebSupervisor/model"
 	"WebSupervisor/MyTool/redis"
-	streams_communication "streams-communication"
-	streams_model "streams-communication/model"
+	"WebSupervisor/MyTool/streamtool"
+	"WebSupervisor/MyTool/streamtool/models"
 )
 
 type CacheService struct {
@@ -24,48 +24,95 @@ func NewCacheService(config *model.CacheConfig, debug bool) *CacheService {
 	}
 }
 
-// ProcessTask 实现StreamProcessor接口
-func (s *CacheService) ProcessTask(task streams_model.Message) {
-	log.Printf("Processing task: %s", task.TaskID)
-	
-	switch task.ServiceName {
-	case "compare_and_save":
-		s.handleCompareAndSave(task)
-	case "get":
-		s.handleGet(task)
-	case "set":
-		s.handleSet(task)
-	case "delete":
-		s.handleDelete(task)
-	case "get_and_set":
-		s.handleGetAndSet(task)
-	default:
-		if s.debug {
-			log.Printf("Debug - Unsupported service: %s", task.ServiceName)
-		}
-	}
-}
-
+// Start 启动缓存服务
 func (s *CacheService) Start() {
 	log.Println("Starting cache service...")
 	if s.debug {
 		log.Printf("Debug mode enabled, config: %+v", s.config)
 	}
 
-	// 创建流消费者
-	consumer := streams_communication.NewStreamConsumer(
-		s.redisClient,
-		s.config,
-		s,
-		s.debug,
-		s.config.InputStream,
-		s.config.ConsumerGroup,
-		"cache-consumer",
-		"compare_and_save",
-	)
+	// 初始化StreamTool
+	streamToolConfig := &models.StreamToolConfig{
+		Redis: models.RedisConfig{
+			Host:     s.config.Redis.Host,
+			Port:     s.config.Redis.Port,
+			Password: s.config.Redis.Password,
+			DB:       s.config.Redis.DB,
+		},
+		Services: []models.ServiceConfig{
+			{
+				Name:          "compare_and_save",
+				StreamName:    s.config.InputStream,
+				ConsumerGroup: s.config.ConsumerGroup,
+				ConsumerID:    "cache-consumer",
+			},
+			{
+				Name:          "get",
+				StreamName:    s.config.InputStream,
+				ConsumerGroup: s.config.ConsumerGroup,
+				ConsumerID:    "cache-consumer",
+			},
+			{
+				Name:          "set",
+				StreamName:    s.config.InputStream,
+				ConsumerGroup: s.config.ConsumerGroup,
+				ConsumerID:    "cache-consumer",
+			},
+			{
+				Name:          "delete",
+				StreamName:    s.config.InputStream,
+				ConsumerGroup: s.config.ConsumerGroup,
+				ConsumerID:    "cache-consumer",
+			},
+			{
+				Name:          "get_and_set",
+				StreamName:    s.config.InputStream,
+				ConsumerGroup: s.config.ConsumerGroup,
+				ConsumerID:    "cache-consumer",
+			},
+		},
+		Debug: s.debug,
+	}
 	
-	// 启动流消费者
-	consumer.Start()
+	streamtool.InitStreamTool(streamToolConfig)
+	
+	// 启动消息网关
+	st := streamtool.GetStreamTool()
+	st.StartGateway(s.config.InputStream, s.config.ConsumerGroup, "cache-gateway")
+	
+	// 启动服务
+	st.StartService("compare_and_save", s.handleStreamMessage)
+	st.StartService("get", s.handleStreamMessage)
+	st.StartService("set", s.handleStreamMessage)
+	st.StartService("delete", s.handleStreamMessage)
+	st.StartService("get_and_set", s.handleStreamMessage)
+	
+	log.Println("Cache service started successfully")
+	
+	// 保持服务运行
+	select {}
+}
+
+// handleStreamMessage 处理流消息
+func (s *CacheService) handleStreamMessage(msg *models.StreamMessage) {
+	log.Printf("Processing task: %s", msg.MessageID)
+	
+	switch msg.ServiceName {
+	case "compare_and_save":
+		s.handleCompareAndSave(msg)
+	case "get":
+		s.handleGet(msg)
+	case "set":
+		s.handleSet(msg)
+	case "delete":
+		s.handleDelete(msg)
+	case "get_and_set":
+		s.handleGetAndSet(msg)
+	default:
+		if s.debug {
+			log.Printf("Debug - Unsupported service: %s", msg.ServiceName)
+		}
+	}
 }
 
 

@@ -5,8 +5,8 @@ import (
 
 	"WebSupervisor/model"
 	"WebSupervisor/MyTool/redis"
-	streams_communication "streams-communication"
-	streams_model "streams-communication/model"
+	"WebSupervisor/MyTool/streamtool"
+	"WebSupervisor/MyTool/streamtool/models"
 )
 
 type NotifierService struct {
@@ -23,38 +23,57 @@ func NewNotifierService(config *model.NotifierConfig, debug bool) *NotifierServi
 	}
 }
 
+// Start 启动通知服务
 func (s *NotifierService) Start() {
 	log.Println("Starting notifier service...")
 	if s.debug {
 		log.Printf("Debug mode enabled, config: %+v", s.config)
 	}
 
-	// 创建流消费者
-	consumer := streams_communication.NewStreamConsumer(
-		s.redisClient,
-		s.config,
-		s,
-		s.debug,
-		s.config.InputStream,
-		s.config.ConsumerGroup,
-		"notifier-consumer",
-		"send_email",
-	)
+	// 初始化StreamTool
+	streamToolConfig := &models.StreamToolConfig{
+		Redis: models.RedisConfig{
+			Host:     s.config.Redis.Host,
+			Port:     s.config.Redis.Port,
+			Password: s.config.Redis.Password,
+			DB:       s.config.Redis.DB,
+		},
+		Services: []models.ServiceConfig{
+			{
+				Name:          "send_email",
+				StreamName:    s.config.InputStream,
+				ConsumerGroup: s.config.ConsumerGroup,
+				ConsumerID:    "notifier-consumer",
+			},
+		},
+		Debug: s.debug,
+	}
 	
-	// 启动流消费者
-	consumer.Start()
+	streamtool.InitStreamTool(streamToolConfig)
+	
+	// 启动消息网关
+	st := streamtool.GetStreamTool()
+	st.StartGateway(s.config.InputStream, s.config.ConsumerGroup, "notifier-gateway")
+	
+	// 启动服务
+	st.StartService("send_email", s.handleStreamMessage)
+	
+	log.Println("Notifier service started successfully")
+	
+	// 保持服务运行
+	select {}
 }
 
-// ProcessTask 实现StreamProcessor接口
-func (s *NotifierService) ProcessTask(task streams_model.Message) {
-	log.Printf("Processing task: %s", task.TaskID)
+// handleStreamMessage 处理流消息
+func (s *NotifierService) handleStreamMessage(msg *models.StreamMessage) {
+	log.Printf("Processing task: %s", msg.MessageID)
 	
-	switch task.ServiceName {
+	switch msg.ServiceName {
 	case "send_email":
-		s.handleSendEmail(task)
+		s.handleSendEmail(msg)
 	default:
 		if s.debug {
-			log.Printf("Debug - Unsupported service: %s", task.ServiceName)
+			log.Printf("Debug - Unsupported service: %s", msg.ServiceName)
 		}
 	}
 }

@@ -3,15 +3,31 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"strconv"
 
-	"WebSupervisor/model"
 	"WebSupervisor/MyTool"
-	streams_model "streams-communication/model"
+	"WebSupervisor/MyTool/streamtool"
+	"WebSupervisor/MyTool/streamtool/models"
+	"WebSupervisor/model"
 )
 
-func (s *CrawlerService) handleHttpRequest(task streams_model.Message) {
+func (s *CrawlerService) handleHttpRequest(msg *models.StreamMessage) {
+	log.Printf(">>>rocessing msg.Playload: %v", msg.Playload)
+	// 检查url字段是否存在
+	if _, ok := msg.Playload["url"]; !ok {
+		log.Printf("Error: url field not found in playload")
+		return
+	}
+
+	// 解析参数
 	var params model.CrawlerParameter
-	if err := json.Unmarshal([]byte(task.Playload), &params); err != nil {
+	playloadData, err := json.Marshal(msg.Playload)
+	if err != nil {
+		log.Printf("Error marshalling playload: %v", err)
+		return
+	}
+
+	if err := json.Unmarshal(playloadData, &params); err != nil {
 		log.Printf("Error unmarshalling playload: %v", err)
 		return
 	}
@@ -21,7 +37,6 @@ func (s *CrawlerService) handleHttpRequest(task streams_model.Message) {
 	}
 
 	var response string
-	var err error
 
 	httpClient := MyTool.NewHttpHeader(params.URL, params.Headers)
 
@@ -30,43 +45,38 @@ func (s *CrawlerService) handleHttpRequest(task streams_model.Message) {
 		if s.debug {
 			log.Printf("Debug - Sending GET request to: %s", params.URL)
 		}
-		response = httpClient.Get("").GetBodyString()
+		response = httpClient.Get("").Read().GetBodyString()
 	case "POST":
 		if s.debug {
 			log.Printf("Debug - Sending POST request to: %s", params.URL)
 		}
-		response = httpClient.Post(params.Body, params.StrPayload).GetBodyString()
+		response = httpClient.Post(params.Body, params.StrPayload).Read().GetBodyString()
 	default:
 		log.Printf("Unsupported method: %s", params.Method)
-		return
-	}
-
-	if err != nil {
-		log.Printf("HTTP request failed: %v", err)
 		return
 	}
 
 	if s.debug {
 		log.Printf("Debug - HTTP response received, length: %d", len(response))
 	}
-
+	log.Printf(">>>handleHttpRequest response: %s", response)
+	// 构造响应消息
 	paramData := map[string]interface{}{
 		"content": response,
 	}
-	paramBytes, _ := json.Marshal(paramData)
 
-	result := map[string]interface{}{
-		"callback_stream": s.config.InputStream, // 本微服务的streams
-		"consumer_group":  task.CallbackStream,  // 请求消息的callback_stream
-		"playload":        string(paramBytes),   // 处理结果
-		"service_name":    "response",           // 响应消息统一为response
-		"message_id":      task.ReplyID,         // 上一次消息编号+1
-		"reply_id":        task.TaskID,          // 请求消息的id
+	st := streamtool.GetStreamTool()
+	responseMsg := &models.StreamMessage{
+		MessageID:      strconv.Itoa(st.GetMessageID()),
+		ReplyID:        msg.MessageID,
+		ServiceName:    "response",
+		CallbackStream: msg.CallbackStream,
+		Playload:       paramData,
 	}
 
-	if err := s.redisClient.PublishMessage(task.CallbackStream, result); err != nil {
-		log.Printf("Error publishing result: %v", err)
+	if !st.StreamPush(responseMsg, msg.CallbackStream) {
+		log.Printf("Error publishing result: failed to push to stream")
 	} else if s.debug {
-		log.Printf("Debug - Published result to stream: %s", task.CallbackStream)
+		log.Printf("Debug - Published result to stream: %s", msg.CallbackStream)
 	}
 }

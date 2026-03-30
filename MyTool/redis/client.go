@@ -37,15 +37,51 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) PublishMessage(stream string, message interface{}) error {
-	// 将消息转换为map[string]interface{}
+	// 检查是否为StreamMessage类型
+	if streamMsg, ok := message.(map[string]interface{}); ok {
+		// 创建新的map来处理嵌套字段
+		msgMap := make(map[string]interface{})
+
+		for key, value := range streamMsg {
+			// 如果是嵌套map，序列化为JSON字符串
+			if nestedMap, ok := value.(map[string]interface{}); ok {
+				jsonData, err := json.Marshal(nestedMap)
+				if err != nil {
+					return err
+				}
+				msgMap[key] = string(jsonData)
+			} else {
+				msgMap[key] = value
+			}
+		}
+
+		_, err := c.client.XAdd(c.ctx, &redis.XAddArgs{
+			Stream: stream,
+			Values: msgMap,
+		}).Result()
+		return err
+	}
+
+	// 对于其他类型，使用通用方法
 	data, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
-	
+
 	var msgMap map[string]interface{}
 	if err := json.Unmarshal(data, &msgMap); err != nil {
 		return err
+	}
+
+	// 处理嵌套map
+	for key, value := range msgMap {
+		if nestedMap, ok := value.(map[string]interface{}); ok {
+			jsonData, err := json.Marshal(nestedMap)
+			if err != nil {
+				return err
+			}
+			msgMap[key] = string(jsonData)
+		}
 	}
 
 	_, err = c.client.XAdd(c.ctx, &redis.XAddArgs{

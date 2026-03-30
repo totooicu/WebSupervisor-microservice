@@ -3,14 +3,23 @@ package main
 import (
 	"encoding/json"
 	"log"
-	streams_model "streams-communication/model"
+	"strconv"
 
+	"WebSupervisor/MyTool/streamtool"
+	"WebSupervisor/MyTool/streamtool/models"
 	"WebSupervisor/model"
 )
 
-func (s *CacheService) handleCompareAndSave(task streams_model.Message) {
+func (s *CacheService) handleCompareAndSave(msg *models.StreamMessage) {
+	// 解析参数
 	var params model.CacheParameter
-	if err := json.Unmarshal([]byte(task.Playload), &params); err != nil {
+	playloadData, err := json.Marshal(msg.Playload)
+	if err != nil {
+		log.Printf("Error marshalling playload: %v", err)
+		return
+	}
+	
+	if err := json.Unmarshal(playloadData, &params); err != nil {
 		log.Printf("Error unmarshalling playload: %v", err)
 		return
 	}
@@ -22,7 +31,7 @@ func (s *CacheService) handleCompareAndSave(task streams_model.Message) {
 	}
 
 	var oldData interface{}
-	err := s.redisClient.GetKey(key, &oldData)
+	err = s.redisClient.GetKey(key, &oldData)
 
 	if err != nil {
 		if s.debug {
@@ -31,7 +40,8 @@ func (s *CacheService) handleCompareAndSave(task streams_model.Message) {
 	} else if s.debug {
 		log.Printf("Debug - Found existing data for key: %s", key)
 	}
-	paramData := map[string]interface{}{"changed": false,}
+	
+	paramData := map[string]interface{}{"changed": false}
 	if s.CompareData(oldData, params.Data) {
 		log.Printf("Data changed, saving and sending notification")
 
@@ -44,32 +54,38 @@ func (s *CacheService) handleCompareAndSave(task streams_model.Message) {
 			log.Printf("Debug - Data saved successfully for key: %s", key)
 		}
 
-		paramData["changed"]= true
-
+		paramData["changed"] = true
 	} else if s.debug {
 		log.Printf("Debug - Data unchanged for key: %s", key)
 	}
 
-		paramBytes, _ := json.Marshal(paramData)
-
-		result := map[string]interface{}{
-			"callback_stream": s.config.InputStream, // 本微服务的streams
-			"consumer_group":  task.CallbackStream,  // 请求消息的callback_stream
-			"playload":        string(paramBytes),   // 处理结果
-			"service_name":    "response",           // 响应消息统一为response
-			"message_id":      task.ReplyID,         // 上一次消息编号+1
-			"reply_id":        task.TaskID,          // 请求消息的id
-		}
-		if err := s.redisClient.PublishMessage(task.CallbackStream, result); err != nil {
-			log.Printf("Error publishing result: %v", err)
-		} else if s.debug {
-			log.Printf("Debug - Published notification to stream: %s", task.CallbackStream)
-		}
+	// 构造响应消息
+	st := streamtool.GetStreamTool()
+	responseMsg := &models.StreamMessage{
+		MessageID:      strconv.Itoa(st.GetMessageID()),
+		ReplyID:        msg.MessageID,
+		ServiceName:    "response",
+		CallbackStream: msg.CallbackStream,
+		Playload:       paramData,
+	}
+	
+	if !st.StreamPush(responseMsg, msg.CallbackStream) {
+		log.Printf("Error publishing result: failed to push to stream")
+	} else if s.debug {
+		log.Printf("Debug - Published notification to stream: %s", msg.CallbackStream)
+	}
 }
 
-func (s *CacheService) handleGet(task streams_model.Message) {
+func (s *CacheService) handleGet(msg *models.StreamMessage) {
+	// 解析参数
 	var params model.CacheParameter
-	if err := json.Unmarshal([]byte(task.Playload), &params); err != nil {
+	playloadData, err := json.Marshal(msg.Playload)
+	if err != nil {
+		log.Printf("Error marshalling playload: %v", err)
+		return
+	}
+	
+	if err := json.Unmarshal(playloadData, &params); err != nil {
 		log.Printf("Error unmarshalling playload: %v", err)
 		return
 	}
@@ -81,7 +97,7 @@ func (s *CacheService) handleGet(task streams_model.Message) {
 	}
 
 	var data interface{}
-	err := s.redisClient.GetKey(key, &data)
+	err = s.redisClient.GetKey(key, &data)
 
 	if err != nil {
 		if s.debug {
@@ -96,27 +112,34 @@ func (s *CacheService) handleGet(task streams_model.Message) {
 		"data":  data,
 		"error": err != nil,
 	}
-	paramBytes, _ := json.Marshal(paramData)
 
-	result := map[string]interface{}{
-		"callback_stream": s.config.InputStream, // 本微服务的streams
-		"consumer_group":  task.CallbackStream,  // 请求消息的callback_stream
-		"playload":        string(paramBytes),   // 处理结果
-		"service_name":    "response",           // 响应消息统一为response
-		"message_id":      task.ReplyID,         // 上一次消息编号+1
-		"reply_id":        task.TaskID,          // 请求消息的id
+	// 构造响应消息
+	st := streamtool.GetStreamTool()
+	responseMsg := &models.StreamMessage{
+		MessageID:      strconv.Itoa(st.GetMessageID()),
+		ReplyID:        msg.MessageID,
+		ServiceName:    "response",
+		CallbackStream: msg.CallbackStream,
+		Playload:       paramData,
 	}
-
-	if err := s.redisClient.PublishMessage(task.CallbackStream, result); err != nil {
-		log.Printf("Error publishing result: %v", err)
+	
+	if !st.StreamPush(responseMsg, msg.CallbackStream) {
+		log.Printf("Error publishing result: failed to push to stream")
 	} else if s.debug {
-		log.Printf("Debug - Published get result to stream: %s", task.CallbackStream)
+		log.Printf("Debug - Published get result to stream: %s", msg.CallbackStream)
 	}
 }
 
-func (s *CacheService) handleSet(task streams_model.Message) {
+func (s *CacheService) handleSet(msg *models.StreamMessage) {
+	// 解析参数
 	var params model.CacheParameter
-	if err := json.Unmarshal([]byte(task.Playload), &params); err != nil {
+	playloadData, err := json.Marshal(msg.Playload)
+	if err != nil {
+		log.Printf("Error marshalling playload: %v", err)
+		return
+	}
+	
+	if err := json.Unmarshal(playloadData, &params); err != nil {
 		log.Printf("Error unmarshalling playload: %v", err)
 		return
 	}
@@ -140,27 +163,34 @@ func (s *CacheService) handleSet(task streams_model.Message) {
 		"key":   key,
 		"error": nil,
 	}
-	paramBytes, _ := json.Marshal(paramData)
 
-	result := map[string]interface{}{
-		"callback_stream": s.config.InputStream, // 本微服务的streams
-		"consumer_group":  task.CallbackStream,  // 请求消息的callback_stream
-		"playload":        string(paramBytes),   // 处理结果
-		"service_name":    "response",           // 响应消息统一为response
-		"message_id":      task.ReplyID,         // 上一次消息编号+1
-		"reply_id":        task.TaskID,          // 请求消息的id
+	// 构造响应消息
+	st := streamtool.GetStreamTool()
+	responseMsg := &models.StreamMessage{
+		MessageID:      strconv.Itoa(st.GetMessageID()),
+		ReplyID:        msg.MessageID,
+		ServiceName:    "response",
+		CallbackStream: msg.CallbackStream,
+		Playload:       paramData,
 	}
-
-	if err := s.redisClient.PublishMessage(task.CallbackStream, result); err != nil {
-		log.Printf("Error publishing result: %v", err)
+	
+	if !st.StreamPush(responseMsg, msg.CallbackStream) {
+		log.Printf("Error publishing result: failed to push to stream")
 	} else if s.debug {
-		log.Printf("Debug - Published set result to stream: %s", task.CallbackStream)
+		log.Printf("Debug - Published set result to stream: %s", msg.CallbackStream)
 	}
 }
 
-func (s *CacheService) handleDelete(task streams_model.Message) {
+func (s *CacheService) handleDelete(msg *models.StreamMessage) {
+	// 解析参数
 	var params model.CacheParameter
-	if err := json.Unmarshal([]byte(task.Playload), &params); err != nil {
+	playloadData, err := json.Marshal(msg.Playload)
+	if err != nil {
+		log.Printf("Error marshalling playload: %v", err)
+		return
+	}
+	
+	if err := json.Unmarshal(playloadData, &params); err != nil {
 		log.Printf("Error unmarshalling playload: %v", err)
 		return
 	}
@@ -184,27 +214,34 @@ func (s *CacheService) handleDelete(task streams_model.Message) {
 		"key":   key,
 		"error": nil,
 	}
-	paramBytes, _ := json.Marshal(paramData)
 
-	result := map[string]interface{}{
-		"callback_stream": s.config.InputStream, // 本微服务的streams
-		"consumer_group":  task.CallbackStream,  // 请求消息的callback_stream
-		"playload":        string(paramBytes),   // 处理结果
-		"service_name":    "response",           // 响应消息统一为response
-		"message_id":      task.ReplyID,         // 上一次消息编号+1
-		"reply_id":        task.TaskID,          // 请求消息的id
+	// 构造响应消息
+	st := streamtool.GetStreamTool()
+	responseMsg := &models.StreamMessage{
+		MessageID:      strconv.Itoa(st.GetMessageID()),
+		ReplyID:        msg.MessageID,
+		ServiceName:    "response",
+		CallbackStream: msg.CallbackStream,
+		Playload:       paramData,
 	}
-
-	if err := s.redisClient.PublishMessage(task.CallbackStream, result); err != nil {
-		log.Printf("Error publishing result: %v", err)
+	
+	if !st.StreamPush(responseMsg, msg.CallbackStream) {
+		log.Printf("Error publishing result: failed to push to stream")
 	} else if s.debug {
-		log.Printf("Debug - Published delete result to stream: %s", task.CallbackStream)
+		log.Printf("Debug - Published delete result to stream: %s", msg.CallbackStream)
 	}
 }
 
-func (s *CacheService) handleGetAndSet(task streams_model.Message) {
+func (s *CacheService) handleGetAndSet(msg *models.StreamMessage) {
+	// 解析参数
 	var params model.CacheParameter
-	if err := json.Unmarshal([]byte(task.Playload), &params); err != nil {
+	playloadData, err := json.Marshal(msg.Playload)
+	if err != nil {
+		log.Printf("Error marshalling playload: %v", err)
+		return
+	}
+	
+	if err := json.Unmarshal(playloadData, &params); err != nil {
 		log.Printf("Error unmarshalling playload: %v", err)
 		return
 	}
@@ -216,7 +253,7 @@ func (s *CacheService) handleGetAndSet(task streams_model.Message) {
 	}
 
 	var oldData interface{}
-	err := s.redisClient.GetKey(key, &oldData)
+	err = s.redisClient.GetKey(key, &oldData)
 
 	if err != nil {
 		if s.debug {
@@ -240,20 +277,20 @@ func (s *CacheService) handleGetAndSet(task streams_model.Message) {
 		"old_data": oldData,
 		"error":    nil,
 	}
-	paramBytes, _ := json.Marshal(paramData)
 
-	result := map[string]interface{}{
-		"callback_stream": s.config.InputStream, // 本微服务的streams
-		"consumer_group":  task.CallbackStream,  // 请求消息的callback_stream
-		"playload":        string(paramBytes),   // 处理结果
-		"service_name":    "response",           // 响应消息统一为response
-		"message_id":      task.ReplyID,         // 上一次消息编号+1
-		"reply_id":        task.TaskID,          // 请求消息的id
+	// 构造响应消息
+	st := streamtool.GetStreamTool()
+	responseMsg := &models.StreamMessage{
+		MessageID:      strconv.Itoa(st.GetMessageID()),
+		ReplyID:        msg.MessageID,
+		ServiceName:    "response",
+		CallbackStream: msg.CallbackStream,
+		Playload:       paramData,
 	}
-
-	if err := s.redisClient.PublishMessage(task.CallbackStream, result); err != nil {
-		log.Printf("Error publishing result: %v", err)
+	
+	if !st.StreamPush(responseMsg, msg.CallbackStream) {
+		log.Printf("Error publishing result: failed to push to stream")
 	} else if s.debug {
-		log.Printf("Debug - Published get_and_set result to stream: %s", task.CallbackStream)
+		log.Printf("Debug - Published get_and_set result to stream: %s", msg.CallbackStream)
 	}
 }

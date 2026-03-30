@@ -3,59 +3,74 @@ package main
 import (
 	"log"
 
+	"WebSupervisor/MyTool/streamtool"
+	"WebSupervisor/MyTool/streamtool/models"
 	"WebSupervisor/model"
-	"WebSupervisor/MyTool/redis"
-	streams_communication "streams-communication"
-	streams_model "streams-communication/model"
 )
 
 type CrawlerService struct {
-	redisClient *redis.Client
-	config      *model.CrawlerConfig
-	debug       bool
+	config *model.CrawlerConfig
+	debug  bool
 }
 
 func NewCrawlerService(config *model.CrawlerConfig, debug bool) *CrawlerService {
 	return &CrawlerService{
-		redisClient: redis.NewClient(config.Redis.Host, config.Redis.Port, config.Redis.Password, config.Redis.DB),
-		config:      config,
-		debug:       debug,
+		config: config,
+		debug:  debug,
 	}
 }
 
-// ProcessTask 实现StreamProcessor接口
-func (s *CrawlerService) ProcessTask(task streams_model.Message) {
-	log.Printf("Processing task: %s", task.TaskID)
-	
-	switch task.ServiceName {
-	case "http_request":
-		s.handleHttpRequest(task)
-	default:
-		if s.debug {
-			log.Printf("Debug - Unsupported service: %s", task.ServiceName)
-		}
-	}
-}
-
+// Start 启动爬虫服务
 func (s *CrawlerService) Start() {
 	log.Println("Starting crawler service...")
 	if s.debug {
 		log.Printf("Debug mode enabled, config: %+v", s.config)
 	}
 
-	// 创建流消费者
-	consumer := streams_communication.NewStreamConsumer(
-		s.redisClient,
-		s.config,
-		s,
-		s.debug,
-		s.config.InputStream,
-		s.config.ConsumerGroup,
-		"crawler-consumer",
-		"http_request",
-	)
-	
-	// 启动流消费者
-	consumer.Start()
+	// 初始化StreamTool
+	streamToolConfig := &models.StreamToolConfig{
+		Redis: models.RedisConfig{
+			Host:     s.config.Redis.Host,
+			Port:     s.config.Redis.Port,
+			Password: s.config.Redis.Password,
+			DB:       s.config.Redis.DB,
+		},
+		Services: []models.ServiceConfig{
+			{
+				Name:          "http_request",
+				StreamName:    s.config.InputStream,
+				ConsumerGroup: s.config.ConsumerGroup,
+				ConsumerID:    "crawler-consumer",
+			},
+		},
+		Debug: s.debug,
+	}
+
+	streamtool.InitStreamTool(streamToolConfig)
+
+	// 启动消息网关
+	st := streamtool.GetStreamTool()
+	st.StartGateway(s.config.InputStream, s.config.ConsumerGroup, "crawler-gateway")
+
+	// 启动服务
+	st.StartService("http_request", s.handleStreamMessage)
+
+	log.Println("Crawler service started successfully")
+
+	// 保持服务运行
+	select {}
 }
 
+// handleStreamMessage 处理流消息
+func (s *CrawlerService) handleStreamMessage(msg *models.StreamMessage) {
+	log.Printf("Processing task: %s", msg.MessageID)
+
+	switch msg.ServiceName {
+	case "http_request":
+		s.handleHttpRequest(msg)
+	default:
+		if s.debug {
+			log.Printf("Debug - Unsupported service: %s", msg.ServiceName)
+		}
+	}
+}

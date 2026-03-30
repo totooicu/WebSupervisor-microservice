@@ -3,15 +3,24 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"strconv"
 
-	"WebSupervisor/model"
 	"WebSupervisor/MyTool"
-	streams_model "streams-communication/model"
+	"WebSupervisor/MyTool/streamtool"
+	"WebSupervisor/MyTool/streamtool/models"
+	"WebSupervisor/model"
 )
 
-func (s *NotifierService) handleSendEmail(task streams_model.Message) {
+func (s *NotifierService) handleSendEmail(msg *models.StreamMessage) {
+	// 解析参数
 	var params model.NotifierParameter
-	if err := json.Unmarshal([]byte(task.Playload), &params); err != nil {
+	playloadData, err := json.Marshal(msg.Playload)
+	if err != nil {
+		log.Printf("Error marshalling playload: %v", err)
+		return
+	}
+	
+	if err := json.Unmarshal(playloadData, &params); err != nil {
 		log.Printf("Error unmarshalling playload: %v", err)
 		return
 	}
@@ -67,22 +76,21 @@ func (s *NotifierService) handleSendEmail(task streams_model.Message) {
 		"success": true,
 		"tos":     tos,
 	}
-	paramBytes, _ := json.Marshal(paramData)
 
-	// 构建新的响应消息格式
-	result := map[string]interface{}{
-		"callback_stream": s.config.InputStream, // 本微服务的streams
-		"consumer_group":  task.CallbackStream,  // 请求消息的callback_stream
-		"playload":        string(paramBytes),   // 处理结果
-		"service_name":    "response",           // 响应消息统一为response
-		"message_id":      task.ReplyID,         // 上一次消息编号+1
-		"reply_id":        task.TaskID,          // 请求消息的id
+	// 构造响应消息
+	st := streamtool.GetStreamTool()
+	responseMsg := &models.StreamMessage{
+		MessageID:      strconv.Itoa(st.GetMessageID()),
+		ReplyID:        msg.MessageID,
+		ServiceName:    "response",
+		CallbackStream: msg.CallbackStream,
+		Playload:       paramData,
 	}
-
-	if err := s.redisClient.PublishMessage(task.CallbackStream, result); err != nil {
-		log.Printf("Error publishing result: %v", err)
+	
+	if !st.StreamPush(responseMsg, msg.CallbackStream) {
+		log.Printf("Error publishing result: failed to push to stream")
 	} else if s.debug {
-		log.Printf("Debug - Published email result to stream: %s", task.CallbackStream)
+		log.Printf("Debug - Published email result to stream: %s", msg.CallbackStream)
 	}
 }
 

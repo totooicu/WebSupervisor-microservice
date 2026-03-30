@@ -8,20 +8,18 @@ import (
 	"time"
 
 	"WebSupervisor/model"
-	"WebSupervisor/MyTool/redis"
+	"WebSupervisor/MyTool/streamtool"
 )
 
 // HealthChecker 健康检查器
 type HealthChecker struct {
-	redisClient *redis.Client
 	config      *model.MonitorConfig
 	debug       bool
 }
 
 // NewHealthChecker 创建健康检查器
-func NewHealthChecker(redisClient *redis.Client, config *model.MonitorConfig, debug bool) *HealthChecker {
+func NewHealthChecker(config *model.MonitorConfig, debug bool) *HealthChecker {
 	return &HealthChecker{
-		redisClient: redisClient,
 		config:      config,
 		debug:       debug,
 	}
@@ -74,7 +72,7 @@ func (hc *HealthChecker) checkHealth() HealthStatus {
 		Issues:  "",
 	}
 	
-	// 检查Redis连接
+	// 检查Redis连接（通过streamtool）
 	if err := hc.checkRedisConnection(); err != nil {
 		status.Healthy = false
 		status.Issues += "Redis connection failed: " + err.Error() + "; "
@@ -99,9 +97,9 @@ func (hc *HealthChecker) checkRedisConnection() error {
 	
 	// 尝试发布消息到测试流
 	testStream := "health-check-test"
-	err := hc.redisClient.PublishMessage(testStream, testMsg)
-	if err != nil {
-		return fmt.Errorf("Redis connection test failed: %w", err)
+	st := streamtool.GetStreamTool()
+	if !st.StreamPush(testMsg, testStream) {
+		return fmt.Errorf("Redis connection test failed")
 	}
 	
 	return nil
