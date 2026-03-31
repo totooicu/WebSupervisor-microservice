@@ -37,6 +37,7 @@ func (s *CrawlerService) handleHttpRequest(msg *models.StreamMessage) {
 	}
 
 	var response string
+	var statusCode int
 
 	httpClient := http.NewHttpHeader(params.URL, params.Headers)
 
@@ -45,15 +46,27 @@ func (s *CrawlerService) handleHttpRequest(msg *models.StreamMessage) {
 		if s.debug {
 			log.Printf("Debug - Sending GET request to: %s", params.URL)
 		}
-		response = httpClient.Get("").Read().GetBodyString()
+		httpClient.Get("").Read()
+		response = httpClient.GetBodyString()
+		statusCode = httpClient.GetStatusCode()
 	case "POST":
 		if s.debug {
 			log.Printf("Debug - Sending POST request to: %s", params.URL)
 		}
-		response = httpClient.Post(params.Body, params.StrPayload).Read().GetBodyString()
+		httpClient.Post(params.Body, params.StrPayload).Read()
+		response = httpClient.GetBodyString()
+		statusCode = httpClient.GetStatusCode()
 	default:
 		log.Printf("Unsupported method: %s", params.Method)
+		
 		return
+	}
+
+	// 检查状态码是否有效
+	if statusCode == 0 {
+		log.Printf("Warning: Status code is 0, request may have failed")
+	} else if s.debug {
+		log.Printf("Debug - HTTP response status code: %d", statusCode)
 	}
 
 	if s.debug {
@@ -63,7 +76,7 @@ func (s *CrawlerService) handleHttpRequest(msg *models.StreamMessage) {
 	// 构造响应消息
 	paramData := map[string]interface{}{
 		"content": response,
-		"status":httpClient.GetStatusCode(),
+		"status": statusCode,
 	}
 
 	st := streamtool.GetStreamTool()
