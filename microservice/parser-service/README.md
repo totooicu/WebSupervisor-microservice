@@ -1,205 +1,204 @@
-# Parser Service 详细说明文档
+# Parser Service
 
-## 服务概述
+解析服务，提供HTML和JSON解析功能，支持提取指定内容。
 
-Parser Service 是一个数据解析微服务，提供 HTML 和 JSON 格式数据的解析功能。该服务通过 Redis Streams 接收解析任务，支持使用左右边界匹配解析 HTML 内容，以及使用路径表达式解析 JSON 数据。服务采用异步处理模式，确保高效可靠的数据解析能力。
+## 功能特性
 
-## 核心功能说明
+- **HTML解析**: 支持从HTML内容中提取指定内容
+- **JSON解析**: 支持从JSON内容中提取指定字段
+- **多规则解析**: 支持同时应用多个解析规则
+- **灵活配置**: 支持配置解析规则
+- **错误处理**: 完善的错误处理机制
 
-### 1. HTML 解析功能
-- **左右边界匹配**：通过指定左右边界字符串提取 HTML 内容
-- **多结果支持**：支持提取多个匹配结果
-- **灵活配置**：支持配置多个解析规则
+## API接口
 
-### 2. JSON 解析功能
-- **路径表达式**：支持使用点号分隔的路径表达式解析 JSON 数据
-- **多字段提取**：支持同时提取多个 JSON 字段
-- **类型转换**：自动处理不同数据类型的提取
+### 服务名称
 
-### 3. 异步处理机制
-- 通过 Redis Streams 实现任务的异步处理
-- 支持批量解析请求
-- 提供详细的调试日志
+- `parse_html`: 解析HTML内容
+- `parse_json`: 解析JSON内容
 
-## 参数说明
+### 请求参数
 
-### HTML 解析参数
-
-| 参数名 | 数据类型 | 是否必填 | 默认值 | 详细描述 |
-|--------|----------|----------|--------|----------|
-| content | string | 是 | 无 | 需要解析的 HTML 内容 |
-| HTMLKeys | array[HTMLKey] | 是 | 无 | HTML 解析规则数组 |
-
-#### HTMLKey 结构
-
-| 字段名 | 数据类型 | 是否必填 | 默认值 | 详细描述 |
-|--------|----------|----------|--------|----------|
-| left | string | 是 | 无 | 左边界字符串，用于定位开始位置 |
-| right | string | 是 | 无 | 右边界字符串，用于定位结束位置 |
-| keys | array[string] | 否 | 空数组 | 提取结果的键名列表 |
-
-### JSON 解析参数
-
-| 参数名 | 数据类型 | 是否必填 | 默认值 | 详细描述 |
-|--------|----------|----------|--------|----------|
-| content | string | 是 | 无 | 需要解析的 JSON 字符串 |
-| JSONKeys | array[JSONKey] | 是 | 无 | JSON 解析规则数组 |
-
-#### JSONKey 结构
-
-| 字段名 | 数据类型 | 是否必填 | 默认值 | 详细描述 |
-|--------|----------|----------|--------|----------|
-| path | array[interface{}] | 是 | 无 | JSON 路径数组，支持字符串和数字索引 |
-| keys | array[string] | 否 | 空数组 | 提取结果的键名列表 |
-
-### 数据结构定义
-
-```go
-type ParserParameter struct {
-    Content  string      `json:"content"`
-    HTMLKeys []HTMLKey   `json:"HTMLKeys"`
-    JSONKeys []JSONKey   `json:"JSONKeys"`
-}
-
-type HTMLKey struct {
-    Left  string   `json:"left"`
-    Right string   `json:"right"`
-    Keys  []string `json:"keys"`
-}
-
-type JSONKey struct {
-    Path []interface{} `json:"path"`
-    Keys []string      `json:"keys"`
+#### parse_html
+```json
+{
+  "content": "<html><body><title>Test</title></body></html>",
+  "htmlKeys": [
+    {
+      "left": "<title>",
+      "right": "</title>",
+      "keys": ["title"]
+    }
+  ]
 }
 ```
 
-## 返回参数说明
-
-### HTML 解析成功响应
-
-| 字段名 | 数据类型 | 说明 |
-|--------|----------|------|
-| parsed_data | array[string] | 解析提取的字符串数组，包含所有匹配的结果 |
-
-### JSON 解析成功响应
-
-| 字段名 | 数据类型 | 说明 |
-|--------|----------|------|
-| parsed_data | map[string]interface{} | 解析提取的数据，键为路径，值为提取的数据 |
-
-### 返回数据结构
-
+#### parse_json
 ```json
 {
-"parsed_data": ["提取结果1", "提取结果2"]
+  "content": "{\"name\": \"John\", \"age\": 30}",
+  "jsonKeys": [
+    {
+      "path": ["name"],
+      "keys": ["name"]
+    }
+  ]
 }
 ```
 
-或者
+### 参数说明
+
+#### HTML解析
+- `content`: HTML内容（必填）
+- `htmlKeys`: HTML解析规则数组
+  - `left`: 左边界字符串
+  - `right`: 右边界字符串
+  - `keys`: 提取的字段名称
+
+#### JSON解析
+- `content`: JSON内容（必填）
+- `jsonKeys`: JSON解析规则数组
+  - `path`: JSON路径数组
+  - `keys`: 提取的字段名称
+
+### 响应格式
 
 ```json
 {
-"parsed_data": {
-    "user.name": "张三",
-    "user.age": 25
-}
-}
-```
-
-## 错误码说明
-
-| 错误码 | 错误描述 | 可能原因 |
-|--------|----------|----------|
-| 400 | 参数解析失败 | 请求参数格式错误或缺失必填字段 |
-| 400 | HTMLKeys 为空 | HTML 解析时未提供解析规则 |
-| 400 | JSONKeys 为空 | JSON 解析时未提供解析规则 |
-| 500 | 解析失败 | 内容格式错误或解析规则不正确 |
-
-## 调用示例
-
-### 示例 1: HTML 解析
-
-```json
-{
-"task_id": "html-123",
-"consumer_group": "monitor-group",
-"callback_stream": "monitor-responses",
-"service_name": "parse_html",
-"playload": "{\"content\":\"<div class=\\\"title\\\">标题1</div><div class=\\\"title\\\">标题2</div>\",\"HTMLKeys\":[{\"left\":\"<div class=\\\"title\\\">\",\"right\":\"</div>\",\"keys\":[\"titles\"]}]}"
+  "success": true,
+  "data": {
+    "results": [
+      {
+        "title": "Test"
+      }
+    ]
+  }
 }
 ```
 
-### 示例 2: JSON 解析
+## 配置说明
+
+### config.json
 
 ```json
 {
-"task_id": "json-456",
-"consumer_group": "monitor-group",
-"callback_stream": "monitor-responses",
-"service_name": "parse_json",
-"playload": "{\"content\":\"{\\\"user\\\":{\\\"name\\\":\\\"张三\\\",\\\"age\\\":25,\\\"address\\\":{\\\"city\\\":\\\"北京\\\"}}}\",\"JSONKeys\":[{\"path\":[\"user\",\"name\"],\"keys\":[\"username\"]},{\"path\":[\"user\",\"age\"],\"keys\":[\"userage\"]}]}"
-}
-```
-
-### 示例 3: 复杂 JSON 解析（包含数组索引）
-
-```json
-{
-"task_id": "json-789",
-"consumer_group": "monitor-group",
-"callback_stream": "monitor-responses",
-"service_name": "parse_json",
-"playload": "{\"content\":\"{\\\"users\\\":[{\\\"name\\\":\\\"张三\\\"},{\\\"name\\\":\\\"李四\\\"}]}\",\"JSONKeys\":[{\"path\":[\"users\",0,\"name\"],\"keys\":[\"first_user\"]}]}"
-}
-```
-
-## 使用注意事项
-
-### 1. HTML 解析注意事项
-- `left` 和 `right` 边界字符串必须精确匹配目标内容
-- 支持提取多个匹配结果，按出现顺序返回
-- 边界字符串中的特殊字符需要正确转义
-
-### 2. JSON 解析注意事项
-- `path` 数组支持字符串键和数字索引
-- 数字索引用于访问数组元素
-- 路径不存在时返回空值，不会报错
-
-### 3. 配置要求
-- Redis 连接配置必须正确，包括主机、端口、密码和数据库索引
-- 消费者组和输入流名称必须与配置文件一致
-
-### 4. 性能建议
-- 对于大型内容，考虑分块处理以减少内存占用
-- 避免使用过于宽泛的解析规则，可能导致匹配过多结果
-- 对于频繁解析的内容，考虑使用缓存机制
-
-### 5. 错误处理
-- 解析失败时会记录详细的错误日志
-- 建议在生产环境中启用调试模式以便排查问题
-- 对输入内容进行验证，确保格式正确
-
-## 配置文件说明
-
-```json
-{
-"redis": {
+  "redis": {
     "host": "localhost",
     "port": 6379,
     "password": "",
     "db": 0
-},
-"consumer_group": "parser-group",
-"input_stream": "parser-tasks"
+  },
+  "consumer_group": "parser-service-group",
+  "input_stream": "parser-service-input-stream"
 }
 ```
 
-## 运行方式
+## 运行服务
 
 ```bash
-# 开发模式（带调试日志）
-./parser-service.exe -debug -config ./parser-service/config.json
+# 启动服务
+go run main.go service.go handlers.go utils.go --config ./config.json --debug
 
-# 生产模式
-./parser-service.exe -config ./parser-service/config.json
+# 或使用批处理脚本
+./run.bat
 ```
+
+## 使用示例
+
+### HTML解析示例
+
+```json
+{
+  "service": "parse_html",
+  "playload": {
+    "content": "<div><h1>Hello World</h1><p>Welcome to WebSupervisor</p></div>",
+    "htmlKeys": [
+      {
+        "left": "<h1>",
+        "right": "</h1>",
+        "keys": ["title"]
+      },
+      {
+        "left": "<p>",
+        "right": "</p>",
+        "keys": ["content"]
+      }
+    ]
+  }
+}
+```
+
+### JSON解析示例
+
+```json
+{
+  "service": "parse_json",
+  "playload": {
+    "content": "{\"user\": {\"name\": \"John\", \"age\": 30, \"address\": {\"city\": \"New York\"}}}",
+    "jsonKeys": [
+      {
+        "path": ["user", "name"],
+        "keys": ["username"]
+      },
+      {
+        "path": ["user", "age"],
+        "keys": ["userage"]
+      },
+      {
+        "path": ["user", "address", "city"],
+        "keys": ["city"]
+      }
+    ]
+  }
+}
+```
+
+## 开发说明
+
+### 扩展功能
+
+1. 修改 `handlers.go` 文件，添加新的解析器
+2. 在 `service.go` 中注册新的服务
+3. 更新配置文件添加必要的配置项
+
+### 最佳实践
+
+- 使用精确的解析规则
+- 处理解析失败的情况
+- 添加解析结果验证
+- 优化解析性能
+- 支持复杂的解析规则
+
+## 故障排除
+
+### 常见问题
+
+1. **解析结果为空**
+   - 检查解析规则是否正确
+   - 验证内容格式是否符合预期
+   - 查看解析日志
+
+2. **解析错误**
+   - 检查内容格式是否正确
+   - 验证解析规则的语法
+   - 查看错误日志
+
+3. **服务无法启动**
+   - 检查Redis连接
+   - 验证配置文件格式
+
+## 性能优化
+
+- 使用高效的解析算法
+- 实现解析结果缓存
+- 优化正则表达式
+- 使用并发解析提高效率
+- 添加解析超时控制
+
+## 安全注意事项
+
+- 验证输入内容的安全性
+- 防止注入攻击
+- 限制解析内容的大小
+- 实现解析频率限制
+- 监控异常解析请求

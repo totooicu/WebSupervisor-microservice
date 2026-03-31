@@ -1,150 +1,167 @@
-# Crawler Service 详细说明文档
+# Crawler Service
 
-## 服务概述
+爬虫服务，用于爬取网页内容，支持GET和POST请求。
 
-Crawler Service 是一个网络爬取微服务，通过 Redis Streams 接收任务并执行 HTTP 请求。该服务支持 GET 和 POST 请求方法，能够处理不同格式的请求体，并将响应结果发送到指定的回调流中。服务采用异步处理模式，确保高并发和可靠的任务处理能力。
+## 功能特性
 
-## 核心功能说明
+- **HTTP请求**: 支持GET和POST请求
+- **自定义Headers**: 支持自定义请求头
+- **请求参数**: 支持URL查询参数和请求体
+- **响应解析**: 返回响应内容和状态码
+- **错误处理**: 完善的错误处理机制
 
-### 1. HTTP 请求处理
-- **支持的请求方法**：GET、POST
-- **请求体格式**：支持 JSON 对象和字符串格式
-- **自定义请求头**：允许设置自定义 HTTP 请求头
-- **异步处理**：通过 Redis Streams 实现任务的异步处理和结果返回
+## API接口
 
-### 2. 错误处理机制
-- 参数解析错误处理
-- HTTP 请求失败处理
-- 不支持的 HTTP 方法处理
-- 调试模式支持，提供详细的日志输出
+### 服务名称
 
-## 参数说明
+- `http_request`: 发送HTTP请求
 
 ### 请求参数
 
-| 参数名 | 数据类型 | 是否必填 | 默认值 | 详细描述 |
-|--------|----------|----------|--------|----------|
-| url | string | 是 | 无 | 请求的目标 URL 地址，必须包含完整的协议（http:// 或 https://） |
-| method | string | 是 | 无 | HTTP 请求方法，支持的值：GET、POST |
-| headers | map[string]string | 否 | 空对象 | HTTP 请求头，用于设置自定义请求头信息，如 Content-Type、Authorization 等 |
-| body | map[string]interface{} | 否 | null | JSON 格式的请求体，仅在 method 为 POST 时有效 |
-| str_payload | string | 否 | 空字符串 | 字符串格式的请求体，仅在 method 为 POST 时有效，优先级高于 body |
-
-### 数据结构定义
-
-```go
-type CrawlerParameter struct {
-    URL        string                 `json:"url"`
-    Method     string                 `json:"method"`
-    Headers    map[string]string      `json:"headers"`
-    Body       map[string]interface{} `json:"body"`
-    StrPayload string                 `json:"str_payload"`
+```json
+{
+  "url": "https://example.com",
+  "method": "GET",
+  "headers": {
+    "Content-Type": "application/json",
+    "User-Agent": "WebSupervisor-Crawler"
+  },
+  "body": {
+    "key1": "value1",
+    "key2": "value2"
+  },
+  "str_payload": "{\"key\": \"value\"}"
 }
 ```
 
-## 返回参数说明
+### 参数说明
 
-### 成功响应
+- `url`: 请求URL（必填）
+- `method`: 请求方法，支持GET、POST（必填）
+- `headers`: 请求头，键值对形式
+- `body`: POST请求的JSON数据
+- `str_payload`: 字符串形式的请求体，优先级高于body
 
-| 字段名 | 数据类型 | 说明 |
-|--------|----------|------|
-| content | string | HTTP 响应的内容，包含服务器返回的完整响应体 |
-
-### 返回数据结构
+### 响应格式
 
 ```json
 {
-"content": "HTTP响应内容"
+  "success": true,
+  "data": {
+    "content": "response_content",
+    "status": 200
+  }
 }
 ```
 
-## 错误码说明
+## 配置说明
 
-| 错误码 | 错误描述 | 可能原因 |
-|--------|----------|----------|
-| 400 | 参数解析失败 | 请求参数格式错误或缺失必填字段 |
-| 405 | 不支持的HTTP方法 | 请求方法不是 GET 或 POST |
-| 500 | HTTP请求失败 | 网络连接问题、目标服务器错误或超时 |
-
-## 调用示例
-
-### 示例 1: GET 请求
+### config.json
 
 ```json
 {
-"task_id": "task-123",
-"consumer_group": "monitor-group",
-"callback_stream": "monitor-responses",
-"service_name": "http_request",
-"playload": "{\"url\":\"https://api.example.com/data\",\"method\":\"GET\",\"headers\":{\"Accept\":\"application/json\"}}"
-}
-```
-
-### 示例 2: POST 请求（JSON 格式）
-
-```json
-{
-"task_id": "task-456",
-"consumer_group": "monitor-group",
-"callback_stream": "monitor-responses",
-"service_name": "http_request",
-"playload": "{\"url\":\"https://api.example.com/submit\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":{\"username\":\"test\",\"password\":\"123456\"}}"
-}
-```
-
-### 示例 3: POST 请求（字符串格式）
-
-```json
-{
-"task_id": "task-789",
-"consumer_group": "monitor-group",
-"callback_stream": "monitor-responses",
-"service_name": "http_request",
-"playload": "{\"url\":\"https://api.example.com/submit\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/x-www-form-urlencoded\"},\"str_payload\":\"username=test&password=123456\"}"
-}
-```
-
-## 使用注意事项
-
-### 1. 参数优先级
-- 当同时提供 `body` 和 `str_payload` 时，`str_payload` 优先级更高
-- `method` 参数必须严格匹配 "GET" 或 "POST"（大小写敏感）
-
-### 2. 配置要求
-- Redis 连接配置必须正确，包括主机、端口、密码和数据库索引
-- 消费者组和输入流名称必须与配置文件一致
-
-### 3. 性能建议
-- 避免在短时间内发送大量请求，可能导致目标服务器限流
-- 对于大型响应内容，注意内存使用情况
-- 建议在生产环境中启用调试日志进行问题排查
-
-### 4. 安全考虑
-- 不要在请求头或请求体中包含敏感信息
-- 确保目标 URL 是可信的，避免安全风险
-- 考虑实现请求超时机制，防止长时间阻塞
-
-## 配置文件说明
-
-```json
-{
-"redis": {
+  "redis": {
     "host": "localhost",
     "port": 6379,
     "password": "",
     "db": 0
-},
-"consumer_group": "crawler-group",
-"input_stream": "crawler-tasks"
+  },
+  "consumer_group": "crawler-service-group",
+  "input_stream": "crawler-service-input-stream"
 }
 ```
 
-## 运行方式
+## 运行服务
 
 ```bash
-# 开发模式（带调试日志）
-./crawler-service.exe -debug -config ./crawler-service/config.json
+# 启动服务
+go run main.go service.go handlers.go utils.go --config ./config.json --debug
 
-# 生产模式
-./crawler-service.exe -config ./crawler-service/config.json
+# 或使用批处理脚本
+./run.bat
 ```
+
+## 使用示例
+
+### GET请求示例
+
+```json
+{
+  "service": "http_request",
+  "playload": {
+    "url": "https://api.example.com/data",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer token123"
+    }
+  }
+}
+```
+
+### POST请求示例
+
+```json
+{
+  "service": "http_request",
+  "playload": {
+    "url": "https://api.example.com/data",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "username": "admin",
+      "password": "password123"
+    }
+  }
+}
+```
+
+## 开发说明
+
+### 扩展功能
+
+1. 修改 `handlers.go` 文件，添加新的HTTP方法支持
+2. 在 `service.go` 中注册新的服务
+3. 更新配置文件添加必要的配置项
+
+### 最佳实践
+
+- 设置合理的请求超时时间
+- 实现请求重试机制
+- 添加请求频率限制
+- 使用代理IP避免被封禁
+- 设置合适的User-Agent
+
+## 故障排除
+
+### 常见问题
+
+1. **请求失败**
+   - 检查URL是否正确
+   - 验证网络连接
+   - 查看目标网站是否可访问
+
+2. **响应为空**
+   - 检查状态码是否为200
+   - 验证请求头是否正确
+   - 查看目标网站是否有反爬虫机制
+
+3. **服务无法启动**
+   - 检查Redis连接
+   - 验证配置文件格式
+
+## 性能优化
+
+- 使用连接池管理HTTP连接
+- 实现请求并发控制
+- 添加缓存机制避免重复请求
+- 使用异步处理提高吞吐量
+
+## 安全注意事项
+
+- 避免爬取敏感网站
+- 遵守网站的robots.txt规则
+- 设置合理的请求间隔
+- 不要爬取需要登录的内容
+- 尊重网站的使用条款
