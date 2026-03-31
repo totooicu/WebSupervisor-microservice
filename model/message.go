@@ -53,3 +53,19 @@ type MonitorParameter struct {
 	Interval      int              `json:"interval"`
 	CrawlerParams CrawlerParameter `json:"crawler_params"`
 }
+
+type TerminalParameter struct {
+	SessionID string                 `json:"session_id"`
+	Command   []string               `json:"command"`
+	Input     string                 `json:"input"`
+	Payload   map[string]interface{} `json:"payload"`
+}
+
+type EchoParameter struct {
+	Message string `json:"message"`
+}
+
+type AddParameter struct {
+	Num1 float64 `json:"num1"`
+	Num2 float64 `json:"num2"`
+}

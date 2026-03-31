@@ -4,7 +4,7 @@ import (
 	"log"
 	"strconv"
 
-	"WebSupervisor/MyTool/email"
+	email "WebSupervisor/MyTool/email"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
 	"WebSupervisor/model"
@@ -16,13 +16,13 @@ func (s *NotifierService) handleSendEmail(msg *models.StreamMessage) {
 	email_content := msg.Playload
 	params.Subject = email_content["subject"].(string)
 	params.Content = email_content["content"].(string)
-	if email_content["userName"]!=nil{
+	if email_content["userName"] != nil {
 		params.UserName = email_content["userName"].(string)
 	}
-	if email_content["password"]!=nil{
+	if email_content["password"] != nil {
 		params.Password = email_content["password"].(string)
 	}
-	if email_content["tos"]!=nil{
+	if email_content["tos"] != nil {
 		params.Tos = email_content["tos"].([]string)
 	}
 
@@ -62,7 +62,7 @@ func (s *NotifierService) handleSendEmail(msg *models.StreamMessage) {
 
 	log.Printf("Sending email to: %v", tos)
 
-	if err := MyTool.SendEmail(userName, password, tos, params.Subject, params.Content); err != nil {
+	if err := email.SendEmail(userName, password, tos, params.Subject, params.Content); err != nil {
 		log.Printf("Error sending email: %v", err)
 		return
 	}
@@ -87,7 +87,7 @@ func (s *NotifierService) handleSendEmail(msg *models.StreamMessage) {
 		CallbackStream: msg.CallbackStream,
 		Playload:       paramData,
 	}
-	
+
 	if !st.StreamPush(responseMsg, msg.CallbackStream) {
 		log.Printf("Error publishing result: failed to push to stream")
 	} else if s.debug {

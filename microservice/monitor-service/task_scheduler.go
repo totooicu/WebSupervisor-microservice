@@ -154,7 +154,9 @@ func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 
 		// 获取爬虫响应（阻塞）
 		crawlerResponseData := crawlerResponseObj.Get()
-
+		if crawlerResponseData == nil ||crawlerResponseData.(map[string]interface{})["status"]==nil{
+			return fmt.Errorf("crawler failed: status code is nil")
+		}
 		if crawlerResponseData.(map[string]interface{})["status"].(float64) != http.StatusOK {
 			return fmt.Errorf("crawler failed: status code is %d", crawlerResponseData.(map[string]interface{})["status"].(float64))
 		}

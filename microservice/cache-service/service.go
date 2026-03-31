@@ -81,11 +81,11 @@ func (s *CacheService) Start() {
 	st.StartGateway(s.config.InputStream, s.config.ConsumerGroup, "cache-gateway")
 	
 	// 启动服务
-	st.StartService("compare_and_save", s.handleStreamMessage)
-	st.StartService("get", s.handleStreamMessage)
-	st.StartService("set", s.handleStreamMessage)
-	st.StartService("delete", s.handleStreamMessage)
-	st.StartService("get_and_set", s.handleStreamMessage)
+	st.StartService("compare_and_save", s.handleCompareAndSave)
+	st.StartService("get", s.handleGet)
+	st.StartService("set", s.handleSet)
+	st.StartService("delete", s.handleDelete)
+	st.StartService("get_and_set", s.handleGetAndSet)
 	
 	log.Println("Cache service started successfully")
 	

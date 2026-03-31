@@ -52,3 +52,70 @@ type MonitorConfig struct {
 	IntervalSecond             int    `json:"interval_second"`
 	HealthCheckPort            string `json:"health_check_port"`
 }
+
+type TerminalConfig struct {
+	BaseConfig
+	DefaultCommand []string         `json:"defaultCommand"`
+	Services       []ServiceConfig  `json:"services"`
+	Gateway        GatewayConfig    `json:"gateway"`
+	Security       SecurityConfig   `json:"security"`
+	Monitoring     MonitoringConfig `json:"monitoring"`
+}
+
+type ServiceConfig struct {
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Input       InputConfig  `json:"input"`
+	Output      OutputConfig `json:"output"`
+}
+
+type InputConfig struct {
+	Cmd           []string          `json:"cmd"`
+	Params        map[string]string `json:"params"`
+	AutoStart     bool              `json:"autoStart"`
+	RestartPolicy string            `json:"restartPolicy"`
+}
+
+type OutputConfig struct {
+	Adapters []AdapterConfig `json:"adapters"`
+}
+
+type AdapterConfig struct {
+	Name   string                 `json:"name"`
+	Type   string                 `json:"type"`
+	Config map[string]interface{} `json:"config"`
+	Params []ParamConfig          `json:"params,omitempty"`
+}
+
+type ParamConfig struct {
+	Name string            `json:"name,omitempty"`
+	Keys map[string]string `json:"keys,omitempty"`
+}
+
+type GatewayConfig struct {
+	Port           int    `json:"port"`
+	Host           string `json:"host"`
+	Timeout        int    `json:"timeout"`
+	MaxConnections int    `json:"maxConnections"`
+}
+
+type SecurityConfig struct {
+	AllowedCommands []string `json:"allowedCommands"`
+	Timeout         int      `json:"timeout"`
+	MaxOutputSize   int      `json:"maxOutputSize"`
+}
+
+type MonitoringConfig struct {
+	LogLevel    string            `json:"logLevel"`
+	Metrics     bool              `json:"metrics"`
+	HealthCheck HealthCheckConfig `json:"healthCheck"`
+}
+
+type HealthCheckConfig struct {
+	Interval int `json:"interval"`
+	Timeout  int `json:"timeout"`
+}
+
+type TemplateConfig struct {
+	BaseConfig
+}
