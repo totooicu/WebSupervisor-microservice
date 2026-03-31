@@ -1,0 +1,10 @@
+{
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": "",
+    "db": 0
+  },
+  "consumer_group": "template-service-python-group",
+  "input_stream": "template-service-python-input-stream"
+}

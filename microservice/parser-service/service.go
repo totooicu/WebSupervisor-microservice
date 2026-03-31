@@ -6,16 +6,15 @@ import (
 	"WebSupervisor/MyTool/redis"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
-	"WebSupervisor/model"
 )
 
 type ParserService struct {
 	redisClient *redis.Client
-	config      *model.ParserConfig
+	config      *ParserConfig
 	debug       bool
 }
 
-func NewParserService(config *model.ParserConfig, debug bool) *ParserService {
+func NewParserService(config *ParserConfig, debug bool) *ParserService {
 	return &ParserService{
 		redisClient: redis.NewClient(config.Redis.Host, config.Redis.Port, config.Redis.Password, config.Redis.DB),
 		config:      config,

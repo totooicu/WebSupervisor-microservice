@@ -7,18 +7,17 @@ import (
 	"os"
 	"time"
 
-	"WebSupervisor/model"
 	"WebSupervisor/MyTool/streamtool"
 )
 
 // HealthChecker 健康检查器
 type HealthChecker struct {
-	config      *model.MonitorConfig
+	config      *MonitorConfig
 	debug       bool
 }
 
 // NewHealthChecker 创建健康检查器
-func NewHealthChecker(config *model.MonitorConfig, debug bool) *HealthChecker {
+func NewHealthChecker(config *MonitorConfig, debug bool) *HealthChecker {
 	return &HealthChecker{
 		config:      config,
 		debug:       debug,

@@ -5,7 +5,6 @@ import (
 	"log"
 
 	configtool "WebSupervisor/MyTool/config"
-	"WebSupervisor/model"
 )
 
 func main() {
@@ -17,7 +16,7 @@ func main() {
 		log.Println("Debug mode enabled")
 	}
 
-	var config model.MonitorConfig
+	var config MonitorConfig
 	if err := configtool.LoadConfig(*configPath, &config); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}

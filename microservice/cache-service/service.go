@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 
-	"WebSupervisor/model"
 	"WebSupervisor/MyTool/redis"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
@@ -12,11 +11,11 @@ import (
 
 type CacheService struct {
 	redisClient *redis.Client
-	config      *model.CacheConfig
+	config      *CacheConfig
 	debug       bool
 }
 
-func NewCacheService(config *model.CacheConfig, debug bool) *CacheService {
+func NewCacheService(config *CacheConfig, debug bool) *CacheService {
 	return &CacheService{
 		redisClient: redis.NewClient(config.Redis.Host, config.Redis.Port, config.Redis.Password, config.Redis.DB),
 		config:      config,

@@ -7,12 +7,11 @@ import (
 	email "WebSupervisor/MyTool/email"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
-	"WebSupervisor/model"
 )
 
 func (s *NotifierService) handleSendEmail(msg *models.StreamMessage) {
 	// 解析参数
-	var params model.NotifierParameter
+	var params NotifierParameter
 	email_content := msg.Playload
 	params.Subject = email_content["subject"].(string)
 	params.Content = email_content["content"].(string)

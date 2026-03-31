@@ -7,12 +7,11 @@ import (
 
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
-	"WebSupervisor/model"
 )
 
 func (s *CacheService) handleCompareAndSave(msg *models.StreamMessage) {
 	// 解析参数
-	var params model.CacheParameter
+	var params CacheParameter
 	playloadData, err := json.Marshal(msg.Playload)
 	if err != nil {
 		log.Printf("Error marshalling playload: %v", err)
@@ -78,7 +77,7 @@ func (s *CacheService) handleCompareAndSave(msg *models.StreamMessage) {
 
 func (s *CacheService) handleGet(msg *models.StreamMessage) {
 	// 解析参数
-	var params model.CacheParameter
+	var params CacheParameter
 	playloadData, err := json.Marshal(msg.Playload)
 	if err != nil {
 		log.Printf("Error marshalling playload: %v", err)
@@ -132,7 +131,7 @@ func (s *CacheService) handleGet(msg *models.StreamMessage) {
 
 func (s *CacheService) handleSet(msg *models.StreamMessage) {
 	// 解析参数
-	var params model.CacheParameter
+	var params CacheParameter
 	playloadData, err := json.Marshal(msg.Playload)
 	if err != nil {
 		log.Printf("Error marshalling playload: %v", err)
@@ -183,7 +182,7 @@ func (s *CacheService) handleSet(msg *models.StreamMessage) {
 
 func (s *CacheService) handleDelete(msg *models.StreamMessage) {
 	// 解析参数
-	var params model.CacheParameter
+	var params CacheParameter
 	playloadData, err := json.Marshal(msg.Playload)
 	if err != nil {
 		log.Printf("Error marshalling playload: %v", err)
@@ -234,7 +233,7 @@ func (s *CacheService) handleDelete(msg *models.StreamMessage) {
 
 func (s *CacheService) handleGetAndSet(msg *models.StreamMessage) {
 	// 解析参数
-	var params model.CacheParameter
+	var params CacheParameter
 	playloadData, err := json.Marshal(msg.Playload)
 	if err != nil {
 		log.Printf("Error marshalling playload: %v", err)

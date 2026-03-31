@@ -6,7 +6,6 @@ import (
 
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
-	"WebSupervisor/model"
 )
 
 // JobConfig 任务配置结构
@@ -47,7 +46,7 @@ type HTMLKey struct {
 
 // MonitorService 监控服务
 type MonitorService struct {
-	config        *model.MonitorConfig
+	config        *MonitorConfig
 	parser        *ConfigParser
 	communicator  *ServiceCommunicator
 	scheduler     *TaskScheduler
@@ -56,7 +55,7 @@ type MonitorService struct {
 }
 
 // NewMonitorService 创建监控服务实例
-func NewMonitorService(config *model.MonitorConfig, debug bool) *MonitorService {
+func NewMonitorService(config *MonitorConfig, debug bool) *MonitorService {
 	// 创建配置解析器
 	parser := NewConfigParser(debug)
 

@@ -10,12 +10,11 @@ import (
 	parser "WebSupervisor/MyTool/parser"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
-	"WebSupervisor/model"
 )
 
 func (s *ParserService) handleParseHTML(msg *models.StreamMessage) {
 	// 解析参数
-	var params model.ParserParameter
+	var params ParserParameter
 	playloadData, err := json.Marshal(msg.Playload)
 	if err != nil {
 		log.Printf("Error marshalling playload: %v", err)
@@ -61,7 +60,7 @@ func (s *ParserService) handleParseHTML(msg *models.StreamMessage) {
 
 func (s *ParserService) handleParseJSON(msg *models.StreamMessage) {
 	// 解析参数
-	var params model.ParserParameter
+	var params ParserParameter
 	playloadData, err := json.Marshal(msg.Playload)
 	if err != nil {
 		log.Printf("Error marshalling playload: %v", err)

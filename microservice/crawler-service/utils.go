@@ -2,11 +2,10 @@ package main
 
 import (
 	configtool "WebSupervisor/MyTool/config"
-	"WebSupervisor/model"
 )
 
-func loadConfig(configPath string) (*model.CrawlerConfig, error) {
-	var config model.CrawlerConfig
+func loadConfig(configPath string) (*CrawlerConfig, error) {
+	var config CrawlerConfig
 	if err := configtool.LoadConfig(configPath, &config); err != nil {
 		return nil, err
 	}

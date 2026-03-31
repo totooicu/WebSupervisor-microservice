@@ -1,7 +1,6 @@
 package main
 
 import (
-	"WebSupervisor/model"
 	"encoding/json"
 	"strings"
 	"fmt"
@@ -333,7 +332,7 @@ func (ts *TaskScheduler) Fllow(urlConfig URLConfig) {
 }
 
 // createCrawlerTask 创建爬虫任务
-func (ts *TaskScheduler) createCrawlerTask(urlConfig URLConfig) model.Message {
+func (ts *TaskScheduler) createCrawlerTask(urlConfig URLConfig) Message {
 	taskID := strconv.Itoa(int(time.Now().UnixNano()))
 
 	paramData := map[string]interface{}{
@@ -348,7 +347,7 @@ func (ts *TaskScheduler) createCrawlerTask(urlConfig URLConfig) model.Message {
 
 	paramBytes, _ := json.Marshal(paramData)
 
-	return model.Message{
+	return Message{
 		TaskID:         taskID,
 		ConsumerGroup:  "crawler-group",
 		CallbackStream: "monitor-response-stream",
@@ -358,7 +357,7 @@ func (ts *TaskScheduler) createCrawlerTask(urlConfig URLConfig) model.Message {
 }
 
 // createParserTask 创建解析任务
-func (ts *TaskScheduler) createParserTask(rawData string, urlConfig URLConfig) model.Message {
+func (ts *TaskScheduler) createParserTask(rawData string, urlConfig URLConfig) Message {
 	taskID := strconv.Itoa(int(time.Now().UnixNano()))
 
 	paramData := map[string]interface{}{
@@ -371,7 +370,7 @@ func (ts *TaskScheduler) createParserTask(rawData string, urlConfig URLConfig) m
 
 	paramBytes, _ := json.Marshal(paramData)
 
-	return model.Message{
+	return Message{
 		TaskID:         taskID,
 		ConsumerGroup:  "parser-group",
 		CallbackStream: "monitor-response-stream",
@@ -381,7 +380,7 @@ func (ts *TaskScheduler) createParserTask(rawData string, urlConfig URLConfig) m
 }
 
 // createCacheTask 创建缓存比对任务
-func (ts *TaskScheduler) createCacheTask(parsedData interface{}, urlConfig URLConfig,ServiceName string) model.Message {
+func (ts *TaskScheduler) createCacheTask(parsedData interface{}, urlConfig URLConfig,ServiceName string) Message {
 	taskID := strconv.Itoa(int(time.Now().UnixNano()))
 
 	paramData := map[string]interface{}{
@@ -392,7 +391,7 @@ func (ts *TaskScheduler) createCacheTask(parsedData interface{}, urlConfig URLCo
 
 	paramBytes, _ := json.Marshal(paramData)
 
-	return model.Message{
+	return Message{
 		TaskID:         taskID,
 		ConsumerGroup:  "cache-group",
 		CallbackStream: "monitor-response-stream",

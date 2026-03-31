@@ -5,7 +5,6 @@ import (
 	"log"
 
 	configtool "WebSupervisor/MyTool/config"
-	"WebSupervisor/model"
 )
 
 func main() {
@@ -16,8 +15,8 @@ func main() {
 	if *debug {
 		log.Println("Debug mode enabled")
 	}
-
-	var config model.TemplateConfig
+// 加载配置
+	var config TemplateConfig
 	if err := configtool.LoadConfig(*configPath, &config); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
@@ -27,6 +26,9 @@ func main() {
 	// 手动注册服务处理器
 	service.RegisterHandler("echo", service.HandleEcho)
 	service.RegisterHandler("add", service.HandleAdd)
+	service.RegisterHandler("subtract", service.HandleSubtract)
+	service.RegisterHandler("multiply", service.HandleMultiply)
+	service.RegisterHandler("divide", service.HandleDivide)
 	
 	// 启动服务
 	service.Start()

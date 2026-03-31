@@ -17,9 +17,9 @@ type CrawlerParameter struct {
 }
 
 type ParserParameter struct {
-	Content  string      `json:"content"`
-	HTMLKeys []HTMLKey   `json:"htmlKeys"`
-	JSONKeys []JSONKey   `json:"jsonKeys"`
+	Content  string    `json:"content"`
+	HTMLKeys []HTMLKey `json:"htmlKeys"`
+	JSONKeys []JSONKey `json:"jsonKeys"`
 }
 
 type HTMLKey struct {
@@ -59,13 +59,4 @@ type TerminalParameter struct {
 	Command   []string               `json:"command"`
 	Input     string                 `json:"input"`
 	Payload   map[string]interface{} `json:"payload"`
-}
-
-type EchoParameter struct {
-	Message string `json:"message"`
-}
-
-type AddParameter struct {
-	Num1 float64 `json:"num1"`
-	Num2 float64 `json:"num2"`
 }

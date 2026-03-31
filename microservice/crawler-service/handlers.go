@@ -8,7 +8,6 @@ import (
 	http "WebSupervisor/MyTool/http"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
-	"WebSupervisor/model"
 )
 
 func (s *CrawlerService) handleHttpRequest(msg *models.StreamMessage) {
@@ -20,7 +19,7 @@ func (s *CrawlerService) handleHttpRequest(msg *models.StreamMessage) {
 	}
 
 	// 解析参数
-	var params model.CrawlerParameter
+	var params CrawlerParameter
 	playloadData, err := json.Marshal(msg.Playload)
 	if err != nil {
 		log.Printf("Error marshalling playload: %v", err)

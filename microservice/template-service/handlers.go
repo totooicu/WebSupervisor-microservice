@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"WebSupervisor/MyTool/streamtool/models"
-	"WebSupervisor/model"
 )
 
 // Example handlers for demonstration
@@ -21,7 +20,7 @@ func (s *TemplateService) HandleEcho(msg *models.StreamMessage) {
 	}
 
 	// 解析参数
-	var params model.EchoParameter
+	var params EchoParameter
 	if err := s.parseParameters(msg, &params); err != nil {
 		s.sendErrorResponse(msg, "Invalid parameters: "+err.Error())
 		return
@@ -40,7 +39,7 @@ func (s *TemplateService) HandleAdd(msg *models.StreamMessage) {
 	}
 
 	// 解析参数
-	var params model.AddParameter
+	var params AddParameter
 	if err := s.parseParameters(msg, &params); err != nil {
 		s.sendErrorResponse(msg, "Invalid parameters: "+err.Error())
 		return
@@ -48,6 +47,78 @@ func (s *TemplateService) HandleAdd(msg *models.StreamMessage) {
 
 	// 处理业务逻辑（加法运算）
 	result := params.Num1 + params.Num2
+	s.sendSuccessResponse(msg, map[string]interface{}{
+		"result": result,
+		"num1":   params.Num1,
+		"num2":   params.Num2,
+	})
+}
+
+// HandleSubtract 处理减法服务
+func (s *TemplateService) HandleSubtract(msg *models.StreamMessage) {
+	if s.debug {
+		log.Printf("Handling subtract message: %s", msg.MessageID)
+	}
+
+	// 解析参数
+	var params SubtractParameter
+	if err := s.parseParameters(msg, &params); err != nil {
+		s.sendErrorResponse(msg, "Invalid parameters: "+err.Error())
+		return
+	}
+
+	// 处理业务逻辑（减法运算）
+	result := params.Num1 - params.Num2
+	s.sendSuccessResponse(msg, map[string]interface{}{
+		"result": result,
+		"num1":   params.Num1,
+		"num2":   params.Num2,
+	})
+}
+
+// HandleMultiply 处理乘法服务
+func (s *TemplateService) HandleMultiply(msg *models.StreamMessage) {
+	if s.debug {
+		log.Printf("Handling multiply message: %s", msg.MessageID)
+	}
+
+	// 解析参数
+	var params MultiplyParameter
+	if err := s.parseParameters(msg, &params); err != nil {
+		s.sendErrorResponse(msg, "Invalid parameters: "+err.Error())
+		return
+	}
+
+	// 处理业务逻辑（乘法运算）
+	result := params.Num1 * params.Num2
+	s.sendSuccessResponse(msg, map[string]interface{}{
+		"result": result,
+		"num1":   params.Num1,
+		"num2":   params.Num2,
+	})
+}
+
+// HandleDivide 处理除法服务
+func (s *TemplateService) HandleDivide(msg *models.StreamMessage) {
+	if s.debug {
+		log.Printf("Handling divide message: %s", msg.MessageID)
+	}
+
+	// 解析参数
+	var params DivideParameter
+	if err := s.parseParameters(msg, &params); err != nil {
+		s.sendErrorResponse(msg, "Invalid parameters: "+err.Error())
+		return
+	}
+
+	// 检查除数是否为零
+	if params.Num2 == 0 {
+		s.sendErrorResponse(msg, "Division by zero is not allowed")
+		return
+	}
+
+	// 处理业务逻辑（除法运算）
+	result := params.Num1 / params.Num2
 	s.sendSuccessResponse(msg, map[string]interface{}{
 		"result": result,
 		"num1":   params.Num1,

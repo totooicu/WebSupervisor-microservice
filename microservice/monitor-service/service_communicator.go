@@ -8,7 +8,6 @@ import (
 
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
-	"WebSupervisor/model"
 )
 
 // ServiceCommunicator 服务通信器
@@ -22,7 +21,7 @@ type ServiceCommunicator struct {
 }
 
 // NewServiceCommunicator 创建服务通信器
-func NewServiceCommunicator(config *model.MonitorConfig, debug bool) *ServiceCommunicator {
+func NewServiceCommunicator(config *MonitorConfig, debug bool) *ServiceCommunicator {
 	return &ServiceCommunicator{
 		crawlerStream:  config.CrawlerServiceInputStream,
 		parserStream:   config.ParserServiceInputStream,
@@ -143,8 +142,8 @@ func (sc *ServiceCommunicator) SendNotification(subject string, content string) 
 	return nil
 }
 
-// SendMessageWithResponse 发送消息并返回响应对象，由调用者决定何时获取响应
-func (sc *ServiceCommunicator) SendMessageWithResponse(stream string, task model.Message) (*streamtool.Response, error) {
+// SendMessageWithResponse 发送消息并等待响应
+func (sc *ServiceCommunicator) SendMessageWithResponse(stream string, task Message) (*streamtool.Response, error) {
 	// 转换为StreamMessage
 	playload := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(task.Playload), &playload); err != nil {

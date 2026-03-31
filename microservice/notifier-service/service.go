@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 
-	"WebSupervisor/model"
 	"WebSupervisor/MyTool/redis"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
@@ -11,11 +10,11 @@ import (
 
 type NotifierService struct {
 	redisClient *redis.Client
-	config      *model.NotifierConfig
+	config      *NotifierConfig
 	debug       bool
 }
 
-func NewNotifierService(config *model.NotifierConfig, debug bool) *NotifierService {
+func NewNotifierService(config *NotifierConfig, debug bool) *NotifierService {
 	return &NotifierService{
 		redisClient: redis.NewClient(config.Redis.Host, config.Redis.Port, config.Redis.Password, config.Redis.DB),
 		config:      config,

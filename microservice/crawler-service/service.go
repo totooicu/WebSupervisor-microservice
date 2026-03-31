@@ -5,15 +5,14 @@ import (
 
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
-	"WebSupervisor/model"
 )
 
 type CrawlerService struct {
-	config *model.CrawlerConfig
+	config *CrawlerConfig
 	debug  bool
 }
 
-func NewCrawlerService(config *model.CrawlerConfig, debug bool) *CrawlerService {
+func NewCrawlerService(config *CrawlerConfig, debug bool) *CrawlerService {
 	return &CrawlerService{
 		config: config,
 		debug:  debug,

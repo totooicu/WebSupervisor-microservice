@@ -2,11 +2,10 @@ package main
 
 import (
 	configtool "WebSupervisor/MyTool/config"
-	"WebSupervisor/model"
 )
 
-func loadConfig(configPath string) (*model.CacheConfig, error) {
-	var config model.CacheConfig
+func loadConfig(configPath string) (*CacheConfig, error) {
+	var config CacheConfig
 	if err := configtool.LoadConfig(configPath, &config); err != nil {
 		return nil, err
 	}
