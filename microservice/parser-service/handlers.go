@@ -6,7 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-
+stringtool "WebSupervisor/MyTool/string"
 	parser "WebSupervisor/MyTool/parser"
 	"WebSupervisor/MyTool/streamtool"
 	"WebSupervisor/MyTool/streamtool/models"
@@ -30,9 +30,19 @@ func (s *ParserService) handleParseHTML(msg *models.StreamMessage) {
 		log.Printf(">>>Debug - HTML parse params: HTMLKeys=%v, content length=%d", params.HTMLKeys, len(params.Content))
 	}
 	// log.Printf(">>>Debug - HTML parse params: content=%s", params.Content[len(params.Content)-100:len(params.Content)])
-		
-	results := parser.ParseHTML(params.Content, []string{params.HTMLKeys[0].Left + "," + params.HTMLKeys[0].Right})
+		 
+	// results := parser.ParseHTML(params.Content, []string{params.HTMLKeys[0].Left + "," + params.HTMLKeys[0].Right})
+	results_mid := stringtool.GetMid (params.Content, params.HTMLKeys[0].Left, params.HTMLKeys[0].Right, 0)
+	var results[]string
+	//results[i]是否能与params.HTMLKeys[0].Keys匹配成功
+	for i := 0; i < len(results_mid); i++ {
+		// Index := stringtool.FindIndex(results_mid[i], ".*")
+		// log.Printf("Debug - HTML parse Index : %v", Index)
 
+		if stringtool.StringMustCompileStringArray(results_mid[i], params.HTMLKeys[0].Keys) {
+			results = append(results, results_mid[i])
+		}
+	}
 	if s.debug {
 		log.Printf("Debug - HTML parse completed, found %d results", len(results))
 	}

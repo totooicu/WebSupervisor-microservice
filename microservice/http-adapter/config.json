@@ -1,0 +1,86 @@
+{
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": "",
+    "db": 0
+  },
+  "server": {
+    "enabled": true,
+    "port": 8080,
+    "host": "0.0.0.0",
+    "default_input_stream": "http-adapter-input-stream",
+    "default_response_stream": "http-adapter-response-stream",
+    "timeout": 30,
+    "debug": true,
+    "max_concurrent_requests": 100,
+    "request_id_header": "X-Request-ID",
+    "service_name_header": "X-Service-Name",
+    "stream_name_header": "X-Stream-Name",
+    "callback_stream_header": "X-Callback-Stream",
+    "timeout_header": "X-Timeout"
+  },
+  "client": {
+    "enabled": true,
+    "stream_mappings": [
+      {
+        "stream": "notification-service-output-stream",
+        "http_endpoint": "http://localhost:3000/api/notifications",
+        "method": "POST",
+        "timeout": 5,
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer your-api-token"
+        },
+        "retry": {
+          "enabled": true,
+          "max_attempts": 3,
+          "backoff_ms": 1000
+        },
+        "dead_letter_stream": "http-adapter-dead-letter-stream"
+      },
+      {
+        "stream": "monitor-service-alerts-stream",
+        "http_endpoint": "http://localhost:8000/webhook/alerts",
+        "method": "POST",
+        "timeout": 3,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "retry": {
+          "enabled": false
+        }
+      },
+      {
+        "stream": "crawler-service-results-stream",
+        "http_endpoint": "http://localhost:4000/api/results",
+        "method": "GET",
+        "timeout": 10,
+        "headers": {},
+        "retry": {
+          "enabled": true,
+          "max_attempts": 5,
+          "backoff_ms": 500
+        }
+      }
+    ],
+    "consumer_group": "http-adapter-client-group",
+    "poll_interval_ms": 1000
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json",
+    "file": "",
+    "max_size_mb": 100,
+    "max_backups": 5
+  },
+  "security": {
+    "enable_cors": true,
+    "allowed_origins": ["*"],
+    "allowed_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allowed_headers": ["*"],
+    "enable_rate_limiting": false,
+    "rate_limit_requests": 100,
+    "rate_limit_window_seconds": 60
+  }
+}

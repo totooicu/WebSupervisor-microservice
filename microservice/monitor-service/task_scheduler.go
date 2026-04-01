@@ -40,7 +40,7 @@ func (ts *TaskScheduler) Start() {
 
 	// 为每个job启动定时任务
 	for _, job := range ts.jobs {
-		ts.startJobScheduler(job)
+		 ts.startJobScheduler(job)
 	}
 
 	log.Println("Task scheduler started successfully")
@@ -90,7 +90,7 @@ func (ts *TaskScheduler) executeJob(job JobConfig) {
 	var wg sync.WaitGroup
 	for _, urlConfig := range job.URLs {
 		wg.Add(1)
-		go func(urlConfig URLConfig) {
+		func(urlConfig URLConfig) {
 			defer wg.Done()
 			if err := ts.executeURLTask(urlConfig); err != nil {
 				error_title := fmt.Sprintf("Error executing URL task %v: %v", urlConfig.URL, err)
@@ -140,6 +140,10 @@ func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 	log.Printf(">>>Executing URL task: %V", urlConfig.URL)
 	crawlerResult:=""
 	for i:=1;i<=5;i++{ 
+		if i==5{
+			log.Printf("crawler failed: 5 times")
+			return nil
+		}
 		// 1. 发送爬虫请求，获取响应对象（非阻塞）
 		crawlerResponseObj, err := ts.communicator.SendMessageWithResponse(
 			ts.communicator.crawlerStream,
@@ -167,6 +171,7 @@ func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 		crawlerResult = crawlerResponseData.(map[string]interface{})["content"].(string)
 		break
 	}
+	log.Printf(">>> crawlerResult: len: %d",  len(crawlerResult))
 	
 	// 2. 发送解析请求，获取响应对象（非阻塞）
 	parserResponseObj, err := ts.communicator.SendMessageWithResponse(
@@ -181,15 +186,15 @@ func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 		log.Printf("Debug - Parser request sent, waiting for response")
 	}
 
-	// 在这里可以执行一些与解析响应无关的计算任务
-	// ...
-
 	// 获取解析响应（阻塞）
 	parserResponseData := parserResponseObj.Get()
 	log.Printf(">>> parserResponseData: %v", parserResponseData)
 	parserResult:= parserResponseData.(map[string]interface{})["parsed_data"]
 	log.Printf(">>> parserResult: %v", parserResult)
-
+	if parserResult==nil{
+		log.Printf("parser failed: parsed_data is nil")
+		return nil
+	}
 	// 3. 发送缓存比对请求，获取响应对象（非阻塞）
 	cacheResponseObj, err := ts.communicator.SendMessageWithResponse(
 		ts.communicator.cacheStream,
@@ -219,8 +224,27 @@ func (ts *TaskScheduler) executeURLTask(urlConfig URLConfig) error {
 		}
 		subject:=fmt.Sprintf("Data changed for URL: %s", urlConfig.URL)
 		content:=fmt.Sprintf("<h1>%s</h1>\n\n", urlConfig.URL)//包含现在的内容、原有的内容、全部内容
-		log.Printf(">>> parserResult: %v ", parserResult)
-		changed_result := changed_result_obj.Get().(map[string]interface{})["old_data"].([]any)
+		ch:=changed_result_obj.Get().(map[string]interface{})["old_data"]
+		log.Printf(">>> ch: %v ", ch)
+
+		var changed_result []any 
+
+		if ch==nil{
+			log.Printf("cache get failed: old_data is nil")
+				cacheResponseObj2, err := ts.communicator.SendMessageWithResponse(
+		ts.communicator.cacheStream,
+		ts.createCacheTask(parserResult, urlConfig,"set"),
+			)
+		if err != nil {
+			return fmt.Errorf("cache set failed: %w", err)
+		}
+		log.Printf(">>> cacheResponseObj2.Get() ready")
+	 	cacheResponseObj2.Get()
+		log.Printf(">>> cacheResponseObj2.Get() finished")
+		}else {
+			changed_result = ch.([]any)
+		}
+		
 		log.Printf(">>> changed_result: %v ", changed_result)
 		
 		content+=gen_email_content(urlConfig, parserResult.([]any), changed_result)

@@ -201,7 +201,6 @@ func (st *StreamTool) StartGateway(inputStream, group, consumer string) {
 
 		for {
 			msg, err := st.StreamGet(inputStream, group, consumer)
-			log.Printf(">>>StartGateway Gateway received message: %+v", msg)
 			if err != nil {
 				log.Printf("Error getting message: %v", err)
 				time.Sleep(1 * time.Second)
@@ -211,6 +210,20 @@ func (st *StreamTool) StartGateway(inputStream, group, consumer string) {
 			if msg == nil {
 				continue
 			}
+			// log.Printf(">>>StartGateway Gateway received message: %+v", msg)
+			//打印所有字段但是不打印playload
+			pl:=msg.Playload
+			msg.Playload = nil
+			log.Printf("Debug - Gateway received message: %+v   playload len: %d", msg, len(pl))
+			//playload前后100字符
+			pl_str := fmt.Sprintf("%v", pl)
+			if len(pl_str) < 200 {
+				log.Printf("Debug - playload: %s", pl_str)
+			}else{
+				log.Printf("Debug - playload: %s", pl_str[:100]+"<---------->" + pl_str[len(pl_str)-100:])
+			}
+			msg.Playload = pl
+
 
 			if st.debug {
 				log.Printf("Debug - Gateway received message: %+v", msg)

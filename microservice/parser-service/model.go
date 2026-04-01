@@ -19,13 +19,13 @@ type ParserConfig struct {
 type HTMLKey struct {
 	Left  string   `json:"left"`
 	Right string   `json:"right"`
-	Keys  []string `json:"keys"`
+	Keys  []string `json:"key"`
 }
 
 // JSONKey JSON解析键结构体
 type JSONKey struct {
 	Path []interface{} `json:"path"`
-	Keys []string      `json:"keys"`
+	Keys []string      `json:"key"`
 }
 
 // ParserParameter 解析服务参数结构体

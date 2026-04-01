@@ -1,7 +1,6 @@
 package MyTool
 
 import (
-	"fmt"
 	"regexp"
 )
 
@@ -39,7 +38,7 @@ func StringMustCompileStringArray(s string, rsub []string) bool {
 
 // ss是否存在一个元素在rsub中（正则）
 func StringArrayMustCompileStringArray(ss []string, rsub []string) bool {
-	fmt.Printf("StringArrayMustCompileStringArray %d*%d", len(ss), len(rsub))
+	// fmt.Printf("StringArrayMustCompileStringArray %d*%d", len(ss), len(rsub))
 	for _, v := range ss {
 		if StringMustCompileStringArray(v, rsub) {
 			return true
@@ -58,6 +57,9 @@ func GetMid(src, rlstr, rrstr string, op byte) []string {
 		return res
 	}
 	LP, RP := FindIndex(src, rlstr), FindIndex(src, rrstr)
+	// fmt.Printf("GetMid  rlstr: %s, rrstr: %s\n",  rlstr, rrstr)
+	// fmt.Printf("GetMid LP: %v, RP: %v\n", LP, RP)
+		
 	// 双指针匹配算法
 	lpIndex := 0
 	for _, vr := range RP {
