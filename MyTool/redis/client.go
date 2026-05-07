@@ -93,7 +93,7 @@ func (c *Client) PublishMessage(stream string, message interface{}) error {
 }
 
 func (c *Client) CreateConsumerGroup(stream, group string) error {
-	_, err := c.client.XGroupCreateMkStream(c.ctx, stream, group, "$").Result()
+	_, err := c.client.XGroupCreateMkStream(c.ctx, stream, group, "0").Result()
 	if err != nil && err.Error() != "BUSYGROUP Consumer Group name already exists" {
 		return err
 	}
